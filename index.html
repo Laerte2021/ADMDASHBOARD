@@ -351,6 +351,34 @@
         input[type="file"] {
             display: none;
         }
+
+        /* MODAL DE LOGIN */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .modal-content input {
+            width: 100%; padding: 10px; margin: 10px 0;
+            border: 1px solid var(--border-color); border-radius: 5px;
+            background: var(--bg-color); color: var(--text-color);
+        }
+        .close-modal {
+            position: absolute; right: 15px; top: 10px;
+            font-size: 20px; cursor: pointer; color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -362,13 +390,27 @@
         </div>
 
         <div class="controls">
-            <span class="update-info"><i class="fa-regular fa-clock"></i> <span id="lastUpdate">16/09/2026 12:00</span></span>
+            <span class="update-info">
+                <i class="fa-solid fa-cloud"></i> <span id="statusFirebase">Conectando...</span>
+            </span>
+            <span class="update-info" style="margin-right: 15px;">
+                <i class="fa-regular fa-clock"></i> Atualizado: <span id="lastUpdate">-</span>
+            </span>
             
             <select id="periodFilter" onchange="applyFilters()">
                 <option value="ALL">Todos os Períodos</option>
             </select>
 
-            <label for="fileInput" class="btn">
+            <!-- ÁREA DE AUTENTICAÇÃO E UPLOAD -->
+            <button id="btnAbrirLogin" class="btn btn-outline" onclick="abrirLogin()">
+                <i class="fa-solid fa-lock"></i> Acesso Admin
+            </button>
+
+            <button id="btnSair" class="btn btn-outline" style="display: none;" onclick="fazerLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Sair
+            </button>
+
+            <label for="fileInput" id="labelUpload" class="btn" style="display: none;">
                 <i class="fa-solid fa-file-import"></i> Carregar Planilha
             </label>
             <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" onchange="handleFileUpload(event)">
@@ -378,6 +420,18 @@
             </button>
         </div>
     </header>
+
+    <!-- MODAL DE LOGIN HTML -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="fecharLogin()">&times;</span>
+            <h3 style="margin-bottom: 15px; color: var(--primary-blue);">Login Administrador</h3>
+            <input type="email" id="emailInput" placeholder="Seu E-mail" />
+            <input type="password" id="senhaInput" placeholder="Sua Senha" />
+            <button onclick="fazerLogin()" class="btn" style="width: 100%; justify-content: center; margin-top: 10px;">Entrar</button>
+            <p id="loginMsg" style="color:#e74c3c; font-size:12px; margin-top:10px;"></p>
+        </div>
+    </div>
 
     <!-- Navigation Tabs -->
     <div class="tabs">
@@ -537,42 +591,174 @@
         </div>
     </div>
 
-    <script>
-        // MOCK DATA INICIAL
-        let rawData = [
-            { Data: '05/01/2026', Grupo: 'TI & Tecnologia', Categoria: 'Software/SaaS', Descricao: 'Licença Microsoft 365', Fornecedor: 'Microsoft', Valor: 4500.00, Competencia: 'Jan/2026', Frequencia: 'Mensal' },
-            { Data: '10/01/2026', Grupo: 'Instalações', Categoria: 'Energia Elétrica', Descricao: 'Conta de Luz Matriz', Fornecedor: 'Enel', Valor: 12300.50, Competencia: 'Jan/2026', Frequencia: 'Mensal' },
-            { Data: '15/01/2026', Grupo: 'TI & Tecnologia', Categoria: 'Infraestrutura', Descricao: 'Servidores AWS Cloud', Fornecedor: 'Amazon Web Services', Valor: 8900.00, Competencia: 'Jan/2026', Frequencia: 'Mensal' },
-            { Data: '20/02/2026', Grupo: 'Serviços Terceiros', Categoria: 'Limpeza e Portaria', Descricao: 'Contrato Mão de Obra', Fornecedor: 'CleanService LTDA', Valor: 18500.00, Competencia: 'Fev/2026', Frequencia: 'Mensal' },
-            { Data: '28/02/2026', Grupo: 'Material de Escritório', Categoria: 'Insumos', Descricao: 'Papelaria e Papel A4', Fornecedor: 'Kalunga', Valor: 1450.20, Competencia: 'Fev/2026', Frequencia: 'Eventual' }
-        ];
+    <!-- SCRIPT TIPO MODULE PARA SUPORTAR O FIREBASE -->
+    <script type="module">
+        // 1. IMPORTAÇÕES DO FIREBASE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        let selectedFilters = {
-            Grupo: null,
-            Categoria: null,
-            Fornecedor: null,
-            Frequencia: null
+        // 2. SUAS CREDENCIAIS
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRXf4atZDlQqozLXbSE4OZWwRIJV5jasY",
+            authDomain: "admdashboard-e71d2.firebaseapp.com",
+            projectId: "admdashboard-e71d2",
+            storageBucket: "admdashboard-e71d2.firebasestorage.app",
+            messagingSenderId: "864319718743",
+            appId: "1:864319718743:web:8536da252b3a0e96d26a12"
         };
 
-        let chartInstance = null;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // FORMATADORES
+        // VARIÁVEIS DO DASHBOARD
+        let rawData = [];
+        let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
+        let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-        // INICIALIZAÇÃO
-        window.onload = function() {
+        // 3. MONITORAR STATUS DE LOGIN
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Logado: Mostra botão de upload e de sair, esconde o de login
+                document.getElementById('labelUpload').style.display = 'inline-flex';
+                document.getElementById('btnSair').style.display = 'inline-flex';
+                document.getElementById('btnAbrirLogin').style.display = 'none';
+                fecharLogin();
+            } else {
+                // Deslogado: Esconde upload e sair, mostra botão de login
+                document.getElementById('labelUpload').style.display = 'none';
+                document.getElementById('btnSair').style.display = 'none';
+                document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
+            }
+        });
+
+        // 4. LEITURA EM TEMPO REAL DO FIRESTORE (onSnapshot)
+        onSnapshot(collection(db, "dados_planilha"), (snapshot) => {
+            const fetchedData = [];
+            snapshot.forEach((doc) => {
+                fetchedData.push(doc.data());
+            });
+            
+            if (fetchedData.length > 0) {
+                rawData = fetchedData;
+            } else {
+                rawData = []; // Fica vazio se o banco estiver limpo
+            }
+
+            document.getElementById('statusFirebase').innerText = "Online (Sincronizado)";
+            document.getElementById('statusFirebase').style.color = "green";
+            
             updateTimestamp();
             populatePeriodFilter();
             populateGroupSelect();
             renderDashboard();
-        };
+        });
 
+        // 5. FUNÇÕES DE AUTENTICAÇÃO
+        window.abrirLogin = () => { document.getElementById('loginModal').style.display = 'flex'; }
+        window.fecharLogin = () => { 
+            document.getElementById('loginModal').style.display = 'none'; 
+            document.getElementById('loginMsg').innerText = '';
+        }
+        
+        window.fazerLogin = () => {
+            const email = document.getElementById('emailInput').value;
+            const senha = document.getElementById('senhaInput').value;
+            const msg = document.getElementById('loginMsg');
+            
+            msg.innerText = "Autenticando...";
+            signInWithEmailAndPassword(auth, email, senha)
+                .then(() => { msg.innerText = ""; })
+                .catch((error) => { msg.innerText = "Erro: E-mail ou senha incorretos."; });
+        }
+
+        window.fazerLogout = () => { signOut(auth); }
+
+        // 6. FUNÇÃO DE UPLOAD PARA O FIREBASE (Limpa o antigo e salva o novo)
+        window.handleFileUpload = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+
+                if (jsonData.length > 0) {
+                    const newRawData = jsonData.map(row => {
+                        const getVal = (possibleNames) => {
+                            const foundKey = Object.keys(row).find(k => 
+                                possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase())
+                            );
+                            return foundKey ? row[foundKey] : '';
+                        };
+
+                        let rawVal = getVal(['VALOR', 'VALOR (R$)', 'VALOR R$', 'VALOR TOTAL']);
+                        if (typeof rawVal === 'string') {
+                            rawVal = rawVal.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                        }
+                        const numVal = parseFloat(rawVal) || 0;
+
+                        return {
+                            Data: getVal(['DATA', 'DATA LANÇAMENTO', 'DATA PGTO']) || '-',
+                            Grupo: getVal(['GRUPO', 'GRUPO DE CUSTO']) || 'Outros',
+                            Categoria: getVal(['CATEGORIA', 'SUB-CATEGORIA']) || 'Geral',
+                            Descricao: getVal(['DESCRIÇÃO', 'DESCRICAO', 'HISTORICO']) || '-',
+                            Fornecedor: getVal(['FORNECEDOR', 'BENEFICIARIO']) || '-',
+                            Valor: numVal,
+                            Competencia: getVal(['COMPETÊNCIA', 'COMPETENCIA', 'MES COMPETENCIA']) || 'N/A',
+                            Frequencia: getVal(['FREQUÊNCIA', 'FREQUENCIA']) || 'Eventual'
+                        };
+                    });
+
+                    // SALVAR NO FIREBASE
+                    const status = document.getElementById('statusFirebase');
+                    status.innerText = "Limpando dados antigos...";
+                    status.style.color = "orange";
+                    
+                    try {
+                        // A. Deletar tudo que existe na coleção atual
+                        const querySnapshot = await getDocs(collection(db, "dados_planilha"));
+                        const deletePromises = [];
+                        querySnapshot.forEach((docSnap) => {
+                            deletePromises.push(deleteDoc(docSnap.ref));
+                        });
+                        await Promise.all(deletePromises); // Aguarda limpar
+
+                        // B. Adicionar a nova planilha
+                        status.innerText = "Salvando novos dados...";
+                        for (let i = 0; i < newRawData.length; i++) {
+                            await addDoc(collection(db, "dados_planilha"), newRawData[i]);
+                        }
+                        
+                        // Reseta o input para permitir subir a mesma planilha novamente se precisar
+                        document.getElementById('fileInput').value = ""; 
+                        alert('Planilha sincronizada e salva no banco de dados com sucesso!');
+
+                    } catch (error) {
+                        console.error("Erro no Firebase:", error);
+                        alert("Erro ao salvar no banco. Verifique suas regras de segurança (Rules) no Firebase.");
+                        status.innerText = "Erro ao salvar";
+                        status.style.color = "red";
+                    }
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ==========================================
+        // FUNÇÕES ORIGINAIS DO DASHBOARD E DA INTERFACE
+        // ==========================================
         function updateTimestamp() {
             const now = new Date();
             document.getElementById('lastUpdate').innerText = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         }
 
-        function toggleDarkMode() {
+        window.toggleDarkMode = () => {
             const body = document.body;
             const icon = document.getElementById('themeIcon');
             if (body.getAttribute('data-theme') === 'dark') {
@@ -584,7 +770,7 @@
             }
         }
 
-        function switchTab(tabId, btn) {
+        window.switchTab = (tabId, btn) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
@@ -608,6 +794,7 @@
 
         function populateGroupSelect() {
             const select = document.getElementById('groupFilterTable');
+            const currentVal = select.value;
             select.innerHTML = '<option value="ALL">Todos os Grupos</option>';
             const groups = [...new Set(rawData.map(item => item.Grupo))].filter(Boolean);
             groups.forEach(g => {
@@ -616,6 +803,7 @@
                 opt.innerText = g;
                 select.appendChild(opt);
             });
+            if(groups.includes(currentVal)) select.value = currentVal;
         }
 
         function getFilteredData() {
@@ -627,7 +815,6 @@
         function renderDashboard() {
             const data = getFilteredData();
 
-            // KPIs
             const total = data.reduce((sum, item) => sum + Number(item.Valor || 0), 0);
             const count = data.length;
             const avg = count > 0 ? total / count : 0;
@@ -636,7 +823,6 @@
             document.getElementById('kpiCount').innerText = count;
             document.getElementById('kpiAvg').innerText = formatCurrency(avg);
 
-            // Agrupamento por Hierarquia (Grupo -> Categoria -> Descricao)
             const groupMap = {};
             data.forEach(item => {
                 const g = item.Grupo || 'Outros';
@@ -659,7 +845,6 @@
                 groupMap[g].categories[c].descriptions[desc].total += val;
             });
 
-            // Maior Grupo
             let topGroup = '-';
             let maxVal = 0;
             Object.keys(groupMap).forEach(g => {
@@ -674,7 +859,6 @@
             renderDrilldown(groupMap, total);
             renderGeneralTable();
             
-            // Renderização das Abas
             renderConsolidatedTab('Grupo', 'tableGroupData', 'titleGroupTab', 'btnBackGroup', data);
             renderConsolidatedTab('Categoria', 'tableCategoryData', 'titleCategoryTab', 'btnBackCategory', data);
             renderConsolidatedTab('Fornecedor', 'tableSupplierData', 'titleSupplierTab', 'btnBackSupplier', data);
@@ -715,7 +899,6 @@
             });
         }
 
-        // NOVO DETALHAMENTO INTERATIVO POR SUBCATEGORIAS (NÍVEL 1 -> NÍVEL 2 -> NÍVEL 3)
         function renderDrilldown(groupMap, grandTotal) {
             const container = document.getElementById('drilldownContainer');
             container.innerHTML = '';
@@ -724,7 +907,6 @@
                 const groupData = groupMap[groupName];
                 const groupPct = grandTotal > 0 ? ((groupData.total / grandTotal) * 100).toFixed(1) : 0;
 
-                // NÍVEL 1: GRUPO
                 const groupNode = document.createElement('div');
                 groupNode.className = 'tree-node';
 
@@ -749,7 +931,6 @@
                 const groupBody = document.createElement('div');
                 groupBody.className = 'tree-body';
 
-                // NÍVEL 2: CATEGORIA
                 Object.keys(groupData.categories).sort((a,b) => groupData.categories[b].total - groupData.categories[a].total).forEach(catName => {
                     const catData = groupData.categories[catName];
                     const catPct = groupData.total > 0 ? ((catData.total / groupData.total) * 100).toFixed(1) : 0;
@@ -778,7 +959,6 @@
                     const catBody = document.createElement('div');
                     catBody.className = 'tree-body';
 
-                    // NÍVEL 3: DESCRIÇÃO
                     Object.keys(catData.descriptions).sort((a,b) => catData.descriptions[b].total - catData.descriptions[a].total).forEach(descName => {
                         const descData = catData.descriptions[descName];
                         const descPct = catData.total > 0 ? ((descData.total / catData.total) * 100).toFixed(1) : 0;
@@ -810,7 +990,7 @@
             });
         }
 
-        function renderGeneralTable() {
+        window.renderGeneralTable = () => {
             const data = getFilteredData();
             const groupFilter = document.getElementById('groupFilterTable').value;
             const tbody = document.querySelector('#tableGeralData tbody');
@@ -922,68 +1102,19 @@
             }
         }
 
-        function clearTabSelection(fieldKey) {
+        window.clearTabSelection = (fieldKey) => {
             selectedFilters[fieldKey] = null;
             renderDashboard();
         }
 
-        function applyFilters() {
-            renderDashboard();
-        }
+        window.applyFilters = () => { renderDashboard(); }
 
-        function handleFileUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-
-                if (jsonData.length > 0) {
-                    rawData = jsonData.map(row => {
-                        const getVal = (possibleNames) => {
-                            const foundKey = Object.keys(row).find(k => 
-                                possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase())
-                            );
-                            return foundKey ? row[foundKey] : '';
-                        };
-
-                        let rawVal = getVal(['VALOR', 'VALOR (R$)', 'VALOR R$', 'VALOR TOTAL']);
-                        if (typeof rawVal === 'string') {
-                            rawVal = rawVal.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
-                        }
-                        const numVal = parseFloat(rawVal) || 0;
-
-                        return {
-                            Data: getVal(['DATA', 'DATA LANÇAMENTO', 'DATA PGTO']) || '-',
-                            Grupo: getVal(['GRUPO', 'GRUPO DE CUSTO']) || 'Outros',
-                            Categoria: getVal(['CATEGORIA', 'SUB-CATEGORIA']) || 'Geral',
-                            Descricao: getVal(['DESCRIÇÃO', 'DESCRICAO', 'HISTORICO']) || '-',
-                            Fornecedor: getVal(['FORNECEDOR', 'BENEFICIARIO']) || '-',
-                            Valor: numVal,
-                            Competencia: getVal(['COMPETÊNCIA', 'COMPETENCIA', 'MES COMPETENCIA']) || 'N/A',
-                            Frequencia: getVal(['FREQUÊNCIA', 'FREQUENCIA']) || 'Eventual'
-                        };
-                    });
-
-                    updateTimestamp();
-                    populatePeriodFilter();
-                    populateGroupSelect();
-                    renderDashboard();
-                    alert('Base de dados atualizada e sincronizada com sucesso!');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function exportToExcel(tableId, filename) {
+        window.exportToExcel = (tableId, filename) => {
             const table = document.getElementById(tableId);
             const wb = XLSX.utils.table_to_book(table, { sheet: "Relatório" });
             XLSX.writeFile(wb, `${filename}.xlsx`);
         }
+
     </script>
 </body>
 </html>
