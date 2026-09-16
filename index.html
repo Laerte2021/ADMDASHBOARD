@@ -645,7 +645,7 @@
 
         // VARIÁVEIS DO DASHBOARD
         let rawData = [];
-        let isUpdating = false; // <-- Nova variável para travar atualizações visuais durante o upload
+        let isUpdating = false; 
         let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
         let currentPeriod = 'ALL'; 
         let chartInstance = null;
@@ -667,7 +667,6 @@
 
         // 4. LEITURA EM TEMPO REAL DO FIRESTORE (onSnapshot)
         onSnapshot(collection(db, "dados_planilha"), (snapshot) => {
-            // Se estiver enviando uma planilha, ignora as atualizações parciais (evita piscar a tela)
             if (isUpdating) return; 
 
             const fetchedData = [];
@@ -753,7 +752,7 @@
                     status.innerText = "Sincronizando banco de dados...";
                     status.style.color = "orange";
                     
-                    isUpdating = true; // <-- Trava a interface (impede de piscar)
+                    isUpdating = true; 
 
                     try {
                         const querySnapshot = await getDocs(collection(db, "dados_planilha"));
@@ -767,9 +766,8 @@
                             await addDoc(collection(db, "dados_planilha"), newRawData[i]);
                         }
                         
-                        isUpdating = false; // <-- Destrava a interface
+                        isUpdating = false; 
 
-                        // Puxa os dados finais uma única vez para exibir de forma limpa e rápida
                         const finalSnap = await getDocs(collection(db, "dados_planilha"));
                         const fetchedData = [];
                         finalSnap.forEach((doc) => fetchedData.push(doc.data()));
@@ -787,7 +785,7 @@
                         alert('Planilha sincronizada de forma automatizada com sucesso!');
 
                     } catch (error) {
-                        isUpdating = false; // Destrava em caso de erro
+                        isUpdating = false; 
                         console.error("Erro no Firebase:", error);
                         alert("Erro ao salvar no banco. Verifique suas regras de segurança (Rules) no Firebase.");
                         status.innerText = "Erro ao salvar";
@@ -831,6 +829,7 @@
             renderDashboard();
         }
 
+        // LOGICA DE ORDENAÇÃO ATUALIZADA
         function populatePeriodFilter() {
             const container = document.getElementById('periodBoxContainer');
             container.innerHTML = '';
@@ -839,19 +838,22 @@
             
             const monthsMap = {
                 'JAN': 1, 'FEV': 2, 'MAR': 3, 'ABR': 4, 'MAI': 5, 'JUN': 6,
-                'JUL': 7, 'AGO': 8, 'SET': 9, 'OUT': 10, 'NOV': 11, 'DEZ': 12,
-                'JANEIRO': 1, 'FEVEREIRO': 2, 'MARÇO': 3, 'MARCO': 3, 'ABRIL': 4, 
-                'MAIO': 5, 'JUNHO': 6, 'JULHO': 7, 'AGOSTO': 8, 'SETEMBRO': 9, 
-                'OUTUBRO': 10, 'NOVEMBRO': 11, 'DEZEMBRO': 12
+                'JUL': 7, 'AGO': 8, 'SET': 9, 'OUT': 10, 'NOV': 11, 'DEZ': 12
             };
 
             periods.sort((a, b) => {
                 const parseDate = (val) => {
-                    const parts = val.split('/');
-                    if (parts.length !== 2) return 0;
-                    const mes = parts[0].trim().toUpperCase();
-                    const ano = parseInt(parts[1].trim());
-                    return (ano * 100) + (monthsMap[mes] || 0);
+                    const str = String(val).toUpperCase();
+                    let mes = 0;
+                    for (let key in monthsMap) {
+                        if (str.includes(key)) {
+                            mes = monthsMap[key];
+                            break;
+                        }
+                    }
+                    const anoMatch = str.match(/\d{4}/);
+                    const ano = anoMatch ? parseInt(anoMatch[0]) : 0;
+                    return (ano * 100) + mes;
                 };
                 return parseDate(a) - parseDate(b);
             });
