@@ -141,7 +141,7 @@
         .tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-bottom: 2px solid var(--border-color);
             overflow-x: auto;
         }
@@ -171,6 +171,38 @@
 
         .tab-content.active {
             display: block;
+        }
+
+        /* Period Boxes (Novo Filtro) */
+        .period-boxes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .period-box {
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: var(--shadow);
+        }
+
+        .period-box:hover {
+            background-color: var(--hover-blue);
+        }
+
+        .period-box.active {
+            background-color: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
         }
 
         /* KPI Cards */
@@ -396,10 +428,6 @@
             <span class="update-info" style="margin-right: 15px;">
                 <i class="fa-regular fa-clock"></i> Atualizado: <span id="lastUpdate">-</span>
             </span>
-            
-            <select id="periodFilter" onchange="applyFilters()">
-                <option value="ALL">Todos os Períodos</option>
-            </select>
 
             <!-- ÁREA DE AUTENTICAÇÃO E UPLOAD -->
             <button id="btnAbrirLogin" class="btn btn-outline" onclick="abrirLogin()">
@@ -441,6 +469,9 @@
         <button class="tab-btn" onclick="switchTab('tab-fornecedor', this)"><i class="fa-solid fa-truck"></i> Por Fornecedor</button>
         <button class="tab-btn" onclick="switchTab('tab-frequencia', this)"><i class="fa-solid fa-arrows-rotate"></i> Por Frequência</button>
     </div>
+
+    <!-- Period Boxes Container (Novo Filtro Horizontal) -->
+    <div id="periodBoxContainer" class="period-boxes"></div>
 
     <!-- TAB 1: VISÃO GERAL -->
     <div id="tab-geral" class="tab-content active">
@@ -614,20 +645,20 @@
 
         // VARIÁVEIS DO DASHBOARD
         let rawData = [];
+        let isUpdating = false; // <-- Nova variável para travar atualizações visuais durante o upload
         let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
+        let currentPeriod = 'ALL'; 
         let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
         // 3. MONITORAR STATUS DE LOGIN
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Logado: Mostra botão de upload e de sair, esconde o de login
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('btnSair').style.display = 'inline-flex';
                 document.getElementById('btnAbrirLogin').style.display = 'none';
                 fecharLogin();
             } else {
-                // Deslogado: Esconde upload e sair, mostra botão de login
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('btnSair').style.display = 'none';
                 document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
@@ -636,6 +667,9 @@
 
         // 4. LEITURA EM TEMPO REAL DO FIRESTORE (onSnapshot)
         onSnapshot(collection(db, "dados_planilha"), (snapshot) => {
+            // Se estiver enviando uma planilha, ignora as atualizações parciais (evita piscar a tela)
+            if (isUpdating) return; 
+
             const fetchedData = [];
             snapshot.forEach((doc) => {
                 fetchedData.push(doc.data());
@@ -644,7 +678,7 @@
             if (fetchedData.length > 0) {
                 rawData = fetchedData;
             } else {
-                rawData = []; // Fica vazio se o banco estiver limpo
+                rawData = [];
             }
 
             document.getElementById('statusFirebase').innerText = "Online (Sincronizado)";
@@ -676,7 +710,7 @@
 
         window.fazerLogout = () => { signOut(auth); }
 
-        // 6. FUNÇÃO DE UPLOAD PARA O FIREBASE (Limpa o antigo e salva o novo)
+        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE
         window.handleFileUpload = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -715,31 +749,45 @@
                         };
                     });
 
-                    // SALVAR NO FIREBASE
                     const status = document.getElementById('statusFirebase');
-                    status.innerText = "Limpando dados antigos...";
+                    status.innerText = "Sincronizando banco de dados...";
                     status.style.color = "orange";
                     
+                    isUpdating = true; // <-- Trava a interface (impede de piscar)
+
                     try {
-                        // A. Deletar tudo que existe na coleção atual
                         const querySnapshot = await getDocs(collection(db, "dados_planilha"));
                         const deletePromises = [];
                         querySnapshot.forEach((docSnap) => {
                             deletePromises.push(deleteDoc(docSnap.ref));
                         });
-                        await Promise.all(deletePromises); // Aguarda limpar
+                        await Promise.all(deletePromises); 
 
-                        // B. Adicionar a nova planilha
-                        status.innerText = "Salvando novos dados...";
                         for (let i = 0; i < newRawData.length; i++) {
                             await addDoc(collection(db, "dados_planilha"), newRawData[i]);
                         }
                         
-                        // Reseta o input para permitir subir a mesma planilha novamente se precisar
+                        isUpdating = false; // <-- Destrava a interface
+
+                        // Puxa os dados finais uma única vez para exibir de forma limpa e rápida
+                        const finalSnap = await getDocs(collection(db, "dados_planilha"));
+                        const fetchedData = [];
+                        finalSnap.forEach((doc) => fetchedData.push(doc.data()));
+                        rawData = fetchedData;
+
+                        status.innerText = "Online (Sincronizado)";
+                        status.style.color = "green";
+                        
+                        updateTimestamp();
+                        populatePeriodFilter();
+                        populateGroupSelect();
+                        renderDashboard();
+
                         document.getElementById('fileInput').value = ""; 
-                        alert('Planilha sincronizada e salva no banco de dados com sucesso!');
+                        alert('Planilha sincronizada de forma automatizada com sucesso!');
 
                     } catch (error) {
+                        isUpdating = false; // Destrava em caso de erro
                         console.error("Erro no Firebase:", error);
                         alert("Erro ao salvar no banco. Verifique suas regras de segurança (Rules) no Firebase.");
                         status.innerText = "Erro ao salvar";
@@ -777,19 +825,50 @@
             btn.classList.add('active');
         }
 
+        window.selectPeriod = (period) => {
+            currentPeriod = period;
+            populatePeriodFilter(); 
+            renderDashboard();
+        }
+
         function populatePeriodFilter() {
-            const select = document.getElementById('periodFilter');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="ALL">Todos os Períodos</option>';
-            const periods = [...new Set(rawData.map(item => item.Competencia))].filter(Boolean);
+            const container = document.getElementById('periodBoxContainer');
+            container.innerHTML = '';
             
-            periods.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                opt.innerText = p;
-                select.appendChild(opt);
+            let periods = [...new Set(rawData.map(item => item.Competencia))].filter(Boolean);
+            
+            const monthsMap = {
+                'JAN': 1, 'FEV': 2, 'MAR': 3, 'ABR': 4, 'MAI': 5, 'JUN': 6,
+                'JUL': 7, 'AGO': 8, 'SET': 9, 'OUT': 10, 'NOV': 11, 'DEZ': 12,
+                'JANEIRO': 1, 'FEVEREIRO': 2, 'MARÇO': 3, 'MARCO': 3, 'ABRIL': 4, 
+                'MAIO': 5, 'JUNHO': 6, 'JULHO': 7, 'AGOSTO': 8, 'SETEMBRO': 9, 
+                'OUTUBRO': 10, 'NOVEMBRO': 11, 'DEZEMBRO': 12
+            };
+
+            periods.sort((a, b) => {
+                const parseDate = (val) => {
+                    const parts = val.split('/');
+                    if (parts.length !== 2) return 0;
+                    const mes = parts[0].trim().toUpperCase();
+                    const ano = parseInt(parts[1].trim());
+                    return (ano * 100) + (monthsMap[mes] || 0);
+                };
+                return parseDate(a) - parseDate(b);
             });
-            if (periods.includes(currentVal)) select.value = currentVal;
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `period-box ${currentPeriod === 'ALL' ? 'active' : ''}`;
+            allBtn.innerText = 'Todos os Períodos';
+            allBtn.onclick = () => selectPeriod('ALL');
+            container.appendChild(allBtn);
+
+            periods.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = `period-box ${currentPeriod === p ? 'active' : ''}`;
+                btn.innerText = p;
+                btn.onclick = () => selectPeriod(p);
+                container.appendChild(btn);
+            });
         }
 
         function populateGroupSelect() {
@@ -807,9 +886,8 @@
         }
 
         function getFilteredData() {
-            const period = document.getElementById('periodFilter').value;
-            if (period === 'ALL') return rawData;
-            return rawData.filter(d => String(d.Competencia).trim() === String(period).trim());
+            if (currentPeriod === 'ALL') return rawData;
+            return rawData.filter(d => String(d.Competencia).trim() === String(currentPeriod).trim());
         }
 
         function renderDashboard() {
@@ -1114,7 +1192,6 @@
             const wb = XLSX.utils.table_to_book(table, { sheet: "Relatório" });
             XLSX.writeFile(wb, `${filename}.xlsx`);
         }
-
     </script>
 </body>
 </html>
