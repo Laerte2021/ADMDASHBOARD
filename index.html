@@ -442,6 +442,17 @@
         .status-nao-aprovado { background-color: #fee2e2; color: #dc2626; border: 1px solid #ef4444; }
         .status-analise { background-color: #e0f2fe; color: #0284c7; border: 1px solid #38bdf8; }
 
+        .table-input {
+            width: 100%;
+            min-width: 120px;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
         input[type="file"] {
             display: none;
         }
@@ -729,7 +740,6 @@
             <div class="card-header">
                 <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras</div>
                 <div style="display: flex; gap: 10px;">
-                    <!-- NOVO BOTÃO DE UPLOAD EXCLUSIVO PARA COMPRAS -->
                     <label for="fileInputCompras" class="btn btn-outline" style="cursor: pointer; display: inline-flex;">
                         <i class="fa-solid fa-file-import"></i> Carregar Planilha de Compras
                     </label>
@@ -764,11 +774,13 @@
                     <div class="form-group"><label>Link do Produto</label><input type="url" id="compLink" placeholder="https://..."></div>
                     <div class="form-group"><label>Utilidade</label><input type="text" id="compUtil" placeholder="Ex: Troca de cadeira quebrada"></div>
                     <div class="form-group"><label>Observações</label><input type="text" id="compObs" placeholder="Ex: Garantia 2 anos"></div>
+                    <!-- NOVO CAMPO APROVADOR -->
+                    <div class="form-group"><label>Aprovador</label><input type="text" id="compAprov" placeholder="Ex: João Silva"></div>
                 </div>
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
             </div>
 
-            <!-- TABELA PEDIDO DE COMPRAS (NOMES AJUSTADOS) -->
+            <!-- TABELA PEDIDO DE COMPRAS -->
             <div class="table-container">
                 <table id="tableComprasData">
                     <thead>
@@ -787,6 +799,7 @@
                             <th>LINK</th>
                             <th>UTILIDADE</th>
                             <th>OBSERVAÇÕES</th>
+                            <th>APROVADOR</th> <!-- NOVA COLUNA -->
                             <th>AÇÕES</th>
                         </tr>
                     </thead>
@@ -825,7 +838,7 @@
         let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-        // DADOS LOCAIS DE PEDIDO DE COMPRAS
+        // DADOS LOCAIS DE PEDIDO DE COMPRAS (ATUALIZADO COM APROVADOR)
         let pedidosCompras = [
             {
                 situacao: 'EM ABERTO',
@@ -839,7 +852,8 @@
                 imposto: 0.00,
                 link: 'https://www.dell.com',
                 utilidade: 'Desenvolvimento de Sistemas',
-                obs: 'Aguardar liberação diretoria'
+                obs: 'Aguardar liberação diretoria',
+                aprovador: ''
             }
         ];
 
@@ -912,7 +926,7 @@
             }); 
         }
 
-        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE (TABELAS DE CUSTO GERAL)
+        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE
         window.handleFileUpload = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -1006,9 +1020,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ==========================================
-        // NOVA FUNÇÃO DE UPLOAD PARA PEDIDOS DE COMPRAS (LOCAL)
-        // ==========================================
+        // LÓGICA DE UPLOAD EXCLUSIVO PARA COMPRAS
         window.handleFileUploadCompras = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -1047,7 +1059,9 @@
                         let imposto = parseNum(getVal(['IMPOSTO', 'TAXA']));
                         let link = getVal(['LINK', 'URL']) || '';
                         let utilidade = getVal(['UTILIDADE', 'MOTIVO']) || '-';
-                        let obs = getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '-';
+                        let obs = getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '';
+                        // Lendo novo campo Aprovador
+                        let aprovador = getVal(['APROVADOR', 'RESPONSÁVEL', 'RESPONSAVEL', 'NOME']) || '';
 
                         return {
                             situacao: situacao.toUpperCase(),
@@ -1061,7 +1075,8 @@
                             imposto,
                             link,
                             utilidade,
-                            obs
+                            obs,
+                            aprovador
                         };
                     });
 
@@ -1472,6 +1487,11 @@
             }
         }
 
+        // NOVA FUNÇÃO PARA ATUALIZAR CAMPOS DE TEXTO NA TABELA
+        window.atualizarCampoCompra = (index, campo, valor) => {
+            pedidosCompras[index][campo] = valor;
+        }
+
         window.renderTabelaCompras = () => {
             const tbody = document.querySelector('#tableComprasData tbody');
             if(!tbody) return;
@@ -1503,7 +1523,12 @@
                     <td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td>
                     <td>${item.link ? `<a href="${item.link}" target="_blank" style="color:var(--secondary-blue);"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-'}</td>
                     <td>${item.utilidade}</td>
-                    <td>${item.obs}</td>
+                    <td>
+                        <input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra(${index}, 'obs', this.value)">
+                    </td>
+                    <td>
+                        <input type="text" value="${item.aprovador || ''}" placeholder="Seu nome..." class="table-input" onchange="atualizarCampoCompra(${index}, 'aprovador', this.value)">
+                    </td>
                     <td>
                         <button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra(${index})">
                             <i class="fa-solid fa-trash"></i>
@@ -1533,7 +1558,8 @@
                 imposto: parseFloat(document.getElementById('compImp').value) || 0,
                 link: document.getElementById('compLink').value || '',
                 utilidade: document.getElementById('compUtil').value || '-',
-                obs: document.getElementById('compObs').value || '-'
+                obs: document.getElementById('compObs').value || '',
+                aprovador: document.getElementById('compAprov').value || ''
             };
 
             pedidosCompras.push(novoItem);
@@ -1548,6 +1574,7 @@
             document.getElementById('compLink').value = '';
             document.getElementById('compUtil').value = '';
             document.getElementById('compObs').value = '';
+            document.getElementById('compAprov').value = '';
         }
 
         window.alterarStatusCompra = (index, novoStatus) => {
