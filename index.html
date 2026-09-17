@@ -165,6 +165,12 @@
             font-size: 13px;
         }
 
+        select:disabled, input:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background-color: var(--bg-color);
+        }
+
         .update-info {
             font-size: 12px;
             color: var(--text-secondary);
@@ -549,7 +555,7 @@
             </button>
 
             <label for="fileInput" id="labelUpload" class="btn" style="display: none;">
-                <i class="fa-solid fa-file-import"></i> Carregar Planilha
+                <i class="fa-solid fa-file-import"></i> Carregar Planilha Custo Geral
             </label>
             <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" onchange="handleFileUpload(event)">
 
@@ -740,7 +746,7 @@
             <div class="card-header">
                 <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras</div>
                 <div style="display: flex; gap: 10px;">
-                    <label for="fileInputCompras" class="btn btn-outline" style="cursor: pointer; display: inline-flex;">
+                    <label for="fileInputCompras" id="labelUploadCompras" class="btn btn-outline" style="cursor: pointer; display: none;">
                         <i class="fa-solid fa-file-import"></i> Carregar Planilha de Compras
                     </label>
                     <input type="file" id="fileInputCompras" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUploadCompras(event)">
@@ -752,7 +758,7 @@
             </div>
 
             <!-- FORMULÁRIO DE NOVO ITEM DE COMPRA -->
-            <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--border-color);">
+            <div id="formComprasContainer" style="display: none; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--border-color);">
                 <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--primary-blue);"><i class="fa-solid fa-plus-circle"></i> Adicionar Item de Compra</h4>
                 <div class="form-grid">
                     <div class="form-group"><label>Situação</label>
@@ -774,7 +780,6 @@
                     <div class="form-group"><label>Link do Produto</label><input type="url" id="compLink" placeholder="https://..."></div>
                     <div class="form-group"><label>Utilidade</label><input type="text" id="compUtil" placeholder="Ex: Troca de cadeira quebrada"></div>
                     <div class="form-group"><label>Observações</label><input type="text" id="compObs" placeholder="Ex: Garantia 2 anos"></div>
-                    <!-- NOVO CAMPO APROVADOR -->
                     <div class="form-group"><label>Aprovador</label><input type="text" id="compAprov" placeholder="Ex: João Silva"></div>
                 </div>
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
@@ -799,7 +804,7 @@
                             <th>LINK</th>
                             <th>UTILIDADE</th>
                             <th>OBSERVAÇÕES</th>
-                            <th>APROVADOR</th> <!-- NOVA COLUNA -->
+                            <th>APROVADOR</th>
                             <th>AÇÕES</th>
                         </tr>
                     </thead>
@@ -814,7 +819,7 @@
         // 1. IMPORTAÇÕES DO FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // 2. SUAS CREDENCIAIS
         const firebaseConfig = {
@@ -833,29 +838,15 @@
         // VARIÁVEIS DO DASHBOARD
         let rawData = [];
         let isUpdating = false; 
+        
+        let pedidosCompras = [];
+        let isUpdatingCompras = false;
+
+        let isAdmin = false; // Controle de edição de campos na tabela
         let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
         let currentPeriod = 'ALL'; 
         let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-
-        // DADOS LOCAIS DE PEDIDO DE COMPRAS (ATUALIZADO COM APROVADOR)
-        let pedidosCompras = [
-            {
-                situacao: 'EM ABERTO',
-                produto: 'Notebook Dell Latitude',
-                qtd: 2,
-                loja: 'Dell',
-                departamento: 'TI',
-                valorUn: 4500.00,
-                desconto: 200.00,
-                frete: 50.00,
-                imposto: 0.00,
-                link: 'https://www.dell.com',
-                utilidade: 'Desenvolvimento de Sistemas',
-                obs: 'Aguardar liberação diretoria',
-                aprovador: ''
-            }
-        ];
 
         // ESCONDER A TELA INICIAL COMO VISITANTE
         window.entrarVisitante = () => {
@@ -865,32 +856,31 @@
         // 3. MONITORAR STATUS DE LOGIN
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                isAdmin = true;
                 document.getElementById('labelUpload').style.display = 'inline-flex';
+                document.getElementById('labelUploadCompras').style.display = 'inline-flex';
+                document.getElementById('formComprasContainer').style.display = 'block';
                 document.getElementById('btnSair').style.display = 'inline-flex';
                 document.getElementById('btnAbrirLogin').style.display = 'none';
                 document.getElementById('initialScreen').style.display = 'none';
                 fecharLogin();
             } else {
+                isAdmin = false;
                 document.getElementById('labelUpload').style.display = 'none';
+                document.getElementById('labelUploadCompras').style.display = 'none';
+                document.getElementById('formComprasContainer').style.display = 'none';
                 document.getElementById('btnSair').style.display = 'none';
                 document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
             }
+            renderTabelaCompras(); // Re-renderiza para ativar/desativar inputs
         });
 
-        // 4. LEITURA EM TEMPO REAL DO FIRESTORE (onSnapshot)
+        // 4. LEITURA EM TEMPO REAL DO FIRESTORE (CUSTOS GERAIS)
         onSnapshot(collection(db, "dados_planilha"), (snapshot) => {
             if (isUpdating) return; 
-
             const fetchedData = [];
-            snapshot.forEach((doc) => {
-                fetchedData.push(doc.data());
-            });
-            
-            if (fetchedData.length > 0) {
-                rawData = fetchedData;
-            } else {
-                rawData = [];
-            }
+            snapshot.forEach((doc) => fetchedData.push(doc.data()));
+            rawData = fetchedData;
 
             document.getElementById('statusFirebase').innerText = "Online (Sincronizado)";
             document.getElementById('statusFirebase').style.color = "green";
@@ -899,6 +889,17 @@
             populatePeriodFilter();
             populateGroupSelect();
             renderDashboard();
+        });
+
+        // LEITURA EM TEMPO REAL DO FIRESTORE (PEDIDOS DE COMPRAS)
+        onSnapshot(collection(db, "pedidos_compras"), (snapshot) => {
+            if (isUpdatingCompras) return; 
+            const fetchedData = [];
+            snapshot.forEach((docSnap) => {
+                // Guarda o ID do documento para permitir edição direta
+                fetchedData.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            pedidosCompras = fetchedData;
             renderTabelaCompras();
         });
 
@@ -926,7 +927,7 @@
             }); 
         }
 
-        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE
+        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE (CUSTOS GERAIS)
         window.handleFileUpload = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -1020,13 +1021,13 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // LÓGICA DE UPLOAD EXCLUSIVO PARA COMPRAS
+        // LÓGICA DE UPLOAD EXCLUSIVO PARA COMPRAS (FIREBASE)
         window.handleFileUploadCompras = (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1060,7 +1061,6 @@
                         let link = getVal(['LINK', 'URL']) || '';
                         let utilidade = getVal(['UTILIDADE', 'MOTIVO']) || '-';
                         let obs = getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '';
-                        // Lendo novo campo Aprovador
                         let aprovador = getVal(['APROVADOR', 'RESPONSÁVEL', 'RESPONSAVEL', 'NOME']) || '';
 
                         return {
@@ -1080,17 +1080,43 @@
                         };
                     });
 
-                    pedidosCompras = novosPedidos;
-                    renderTabelaCompras();
-                    document.getElementById('fileInputCompras').value = ""; 
-                    alert('Planilha de Pedidos de Compras carregada e atualizada na tabela com sucesso!');
+                    isUpdatingCompras = true; 
+
+                    try {
+                        const querySnapshot = await getDocs(collection(db, "pedidos_compras"));
+                        const deletePromises = [];
+                        querySnapshot.forEach((docSnap) => {
+                            deletePromises.push(deleteDoc(docSnap.ref));
+                        });
+                        await Promise.all(deletePromises); 
+
+                        for (let i = 0; i < novosPedidos.length; i++) {
+                            await addDoc(collection(db, "pedidos_compras"), novosPedidos[i]);
+                        }
+                        
+                        isUpdatingCompras = false; 
+
+                        const finalSnap = await getDocs(collection(db, "pedidos_compras"));
+                        const fetchedData = [];
+                        finalSnap.forEach((docSnap) => fetchedData.push({ id: docSnap.id, ...docSnap.data() }));
+                        pedidosCompras = fetchedData;
+
+                        renderTabelaCompras();
+                        document.getElementById('fileInputCompras').value = ""; 
+                        alert('Planilha de Pedidos de Compras sincronizada com o banco de dados!');
+
+                    } catch (error) {
+                        isUpdatingCompras = false; 
+                        console.error("Erro no Firebase:", error);
+                        alert("Erro ao salvar compras. Verifique suas permissões.");
+                    }
                 }
             };
             reader.readAsArrayBuffer(file);
         };
 
         // ==========================================
-        // FUNÇÕES DO DASHBOARD E DA INTERFACE
+        // FUNÇÕES DO DASHBOARD E DA INTERFACE GERAL
         // ==========================================
         function updateTimestamp() {
             const now = new Date();
@@ -1487,9 +1513,24 @@
             }
         }
 
-        // NOVA FUNÇÃO PARA ATUALIZAR CAMPOS DE TEXTO NA TABELA
-        window.atualizarCampoCompra = (index, campo, valor) => {
-            pedidosCompras[index][campo] = valor;
+        // FUNÇÃO PARA ATUALIZAR STATUS NO FIREBASE
+        window.alterarStatusCompra = async (docId, novoStatus) => {
+            try { await updateDoc(doc(db, "pedidos_compras", docId), { situacao: novoStatus }); } 
+            catch(e) { console.error("Erro ao atualizar status:", e); }
+        }
+
+        // FUNÇÃO PARA ATUALIZAR CAMPOS DE TEXTO NO FIREBASE
+        window.atualizarCampoCompra = async (docId, campo, valor) => {
+            try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } 
+            catch(e) { console.error("Erro ao atualizar campo:", e); }
+        }
+
+        // FUNÇÃO PARA REMOVER ITEM NO FIREBASE
+        window.removerPedidoCompra = async (docId) => {
+            if(confirm("Tem certeza que deseja excluir este pedido?")) {
+                try { await deleteDoc(doc(db, "pedidos_compras", docId)); } 
+                catch(e) { console.error("Erro ao remover:", e); }
+            }
         }
 
         window.renderTabelaCompras = () => {
@@ -1497,14 +1538,19 @@
             if(!tbody) return;
             tbody.innerHTML = '';
 
-            pedidosCompras.forEach((item, index) => {
+            const disabledAttr = isAdmin ? '' : 'disabled="disabled"';
+
+            pedidosCompras.forEach((item) => {
                 const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0);
                 const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
+
+                const deleteBtnHtml = isAdmin ? 
+                    `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra(${index}, this.value)">
+                        <select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra('${item.id}', this.value)" ${disabledAttr}>
                             <option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option>
                             <option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option>
                             <option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option>
@@ -1524,22 +1570,18 @@
                     <td>${item.link ? `<a href="${item.link}" target="_blank" style="color:var(--secondary-blue);"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-'}</td>
                     <td>${item.utilidade}</td>
                     <td>
-                        <input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra(${index}, 'obs', this.value)">
+                        <input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}>
                     </td>
                     <td>
-                        <input type="text" value="${item.aprovador || ''}" placeholder="Seu nome..." class="table-input" onchange="atualizarCampoCompra(${index}, 'aprovador', this.value)">
+                        <input type="text" value="${item.aprovador || ''}" placeholder="Seu nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}>
                     </td>
-                    <td>
-                        <button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra(${index})">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
+                    <td>${deleteBtnHtml}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        window.addPedidoCompra = () => {
+        window.addPedidoCompra = async () => {
             const prod = document.getElementById('compProd').value;
             if(!prod) {
                 alert('Por favor, informe pelo menos a descrição do produto.');
@@ -1562,29 +1604,24 @@
                 aprovador: document.getElementById('compAprov').value || ''
             };
 
-            pedidosCompras.push(novoItem);
-            renderTabelaCompras();
-
-            document.getElementById('compProd').value = '';
-            document.getElementById('compQtd').value = '1';
-            document.getElementById('compValUn').value = '0.00';
-            document.getElementById('compDesc').value = '0.00';
-            document.getElementById('compFrete').value = '0.00';
-            document.getElementById('compImp').value = '0.00';
-            document.getElementById('compLink').value = '';
-            document.getElementById('compUtil').value = '';
-            document.getElementById('compObs').value = '';
-            document.getElementById('compAprov').value = '';
-        }
-
-        window.alterarStatusCompra = (index, novoStatus) => {
-            pedidosCompras[index].situacao = novoStatus;
-            renderTabelaCompras();
-        }
-
-        window.removerPedidoCompra = (index) => {
-            pedidosCompras.splice(index, 1);
-            renderTabelaCompras();
+            try {
+                await addDoc(collection(db, "pedidos_compras"), novoItem);
+                
+                // Limpa form após salvar no Firebase
+                document.getElementById('compProd').value = '';
+                document.getElementById('compQtd').value = '1';
+                document.getElementById('compValUn').value = '0.00';
+                document.getElementById('compDesc').value = '0.00';
+                document.getElementById('compFrete').value = '0.00';
+                document.getElementById('compImp').value = '0.00';
+                document.getElementById('compLink').value = '';
+                document.getElementById('compUtil').value = '';
+                document.getElementById('compObs').value = '';
+                document.getElementById('compAprov').value = '';
+            } catch (e) {
+                console.error("Erro ao adicionar item:", e);
+                alert("Erro ao adicionar item. Verifique sua conexão ou permissões.");
+            }
         }
 
         window.clearTabSelection = (fieldKey) => {
