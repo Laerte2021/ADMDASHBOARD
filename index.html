@@ -54,7 +54,7 @@
             padding: 20px;
         }
 
-        /* --- TELA INICIAL (NOVO) --- */
+        /* --- TELA INICIAL --- */
         #initialScreen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -91,7 +91,6 @@
         .btn-admin:hover { opacity: 0.9; }
         .btn-guest { background-color: transparent; border: 1px solid var(--primary-blue); color: var(--primary-blue); }
         .btn-guest:hover { background-color: var(--hover-blue); }
-        /* --------------------------- */
 
         header {
             display: flex;
@@ -157,15 +156,13 @@
             background-color: var(--hover-blue);
         }
 
-        select {
-            padding: 9px 12px;
-            border-radius: 8px;
+        select, input[type="text"], input[type="number"], input[type="url"] {
+            padding: 8px 10px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
             background-color: var(--card-bg);
             color: var(--text-color);
-            font-weight: 600;
             font-size: 13px;
-            cursor: pointer;
         }
 
         .update-info {
@@ -202,6 +199,17 @@
         .tab-btn.active {
             color: var(--primary-blue);
             border-bottom-color: var(--primary-blue);
+        }
+
+        /* BOTÃO DESTACADO PEDIDO DE COMPRAS */
+        .tab-btn.highlight {
+            background-color: var(--primary-blue);
+            color: #ffffff !important;
+            border-radius: 8px 8px 0 0;
+            box-shadow: var(--shadow);
+        }
+        .tab-btn.highlight:hover {
+            background-color: var(--secondary-blue);
         }
 
         .tab-content {
@@ -394,11 +402,13 @@
             color: white;
             padding: 12px;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         td {
             padding: 10px 12px;
             border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
         }
 
         tbody tr.clickable-row {
@@ -419,15 +429,48 @@
             border: 1px solid var(--accent-blue);
         }
 
+        /* Estilos de Status para Pedido de Compras */
+        .status-select {
+            font-weight: bold;
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .status-aberto { background-color: #fef3c7; color: #d97706; border: 1px solid #f59e0b; }
+        .status-aprovado { background-color: #d1fae5; color: #059669; border: 1px solid #10b981; }
+        .status-nao-aprovado { background-color: #fee2e2; color: #dc2626; border: 1px solid #ef4444; }
+        .status-analise { background-color: #e0f2fe; color: #0284c7; border: 1px solid #38bdf8; }
+
         input[type="file"] {
             display: none;
+        }
+
+        /* Form Pedido Compras */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-secondary);
         }
 
         /* MODAL DE LOGIN */
         .modal {
             display: none; 
             position: fixed; 
-            z-index: 3000; /* Alterado para ficar acima da tela inicial */
+            z-index: 3000;
             left: 0; top: 0; width: 100%; height: 100%; 
             background-color: rgba(0,0,0,0.5); 
             justify-content: center; align-items: center;
@@ -454,7 +497,7 @@
 </head>
 <body>
 
-    <!-- TELA INICIAL (NOVO) -->
+    <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
             <i class="fa-solid fa-chart-pie" style="font-size: 40px; color: var(--primary-blue); margin-bottom: 15px;"></i>
@@ -470,7 +513,6 @@
             </div>
         </div>
     </div>
-    <!-- --------------------- -->
 
     <header>
         <div class="title-container">
@@ -525,6 +567,8 @@
         <button class="tab-btn" onclick="switchTab('tab-categoria', this)"><i class="fa-solid fa-list-check"></i> Por Categoria</button>
         <button class="tab-btn" onclick="switchTab('tab-fornecedor', this)"><i class="fa-solid fa-truck"></i> Por Fornecedor</button>
         <button class="tab-btn" onclick="switchTab('tab-frequencia', this)"><i class="fa-solid fa-arrows-rotate"></i> Por Frequência</button>
+        <!-- BOTÃO DESTACADO PEDIDO DE COMPRAS -->
+        <button class="tab-btn highlight" onclick="switchTab('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
     </div>
 
     <!-- Period Boxes Container -->
@@ -679,6 +723,71 @@
         </div>
     </div>
 
+    <!-- TAB 6: PEDIDO DE COMPRAS (NOVO) -->
+    <div id="tab-compras" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras</div>
+                <button class="btn btn-outline" onclick="exportToExcel('tableComprasData', 'Pedidos_De_Compras')">
+                    <i class="fa-solid fa-file-excel"></i> Exportar Excel
+                </button>
+            </div>
+
+            <!-- FORMULÁRIO DE NOVO ITEM DE COMPRA -->
+            <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed var(--border-color);">
+                <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--primary-blue);"><i class="fa-solid fa-plus-circle"></i> Adicionar Item de Compra</h4>
+                <div class="form-grid">
+                    <div class="form-group"><label>Situação</label>
+                        <select id="compSit">
+                            <option value="EM ABERTO">EM ABERTO</option>
+                            <option value="EM ANALISE">EM ANALISE</option>
+                            <option value="APROVADO">APROVADO</option>
+                            <option value="NÃO APROVADO">NÃO APROVADO</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Produto</label><input type="text" id="compProd" placeholder="Ex: Cadeira Ergonômica"></div>
+                    <div class="form-group"><label>Quantidade</label><input type="number" id="compQtd" value="1" min="1"></div>
+                    <div class="form-group"><label>Loja</label><input type="text" id="compLoja" placeholder="Ex: Kabum"></div>
+                    <div class="form-group"><label>Departamento</label><input type="text" id="compDep" placeholder="Ex: TI"></div>
+                    <div class="form-group"><label>Valor Un. (R$)</label><input type="number" id="compValUn" value="0.00" step="0.01"></div>
+                    <div class="form-group"><label>Desconto (R$)</label><input type="number" id="compDesc" value="0.00" step="0.01"></div>
+                    <div class="form-group"><label>Frete (R$)</label><input type="number" id="compFrete" value="0.00" step="0.01"></div>
+                    <div class="form-group"><label>Imposto (R$)</label><input type="number" id="compImp" value="0.00" step="0.01"></div>
+                    <div class="form-group"><label>Link do Produto</label><input type="url" id="compLink" placeholder="https://..."></div>
+                    <div class="form-group"><label>Utilidade</label><input type="text" id="compUtil" placeholder="Ex: Troca de cadeira quebrada"></div>
+                    <div class="form-group"><label>Observações</label><input type="text" id="compObs" placeholder="Ex: Garantia 2 anos"></div>
+                </div>
+                <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
+            </div>
+
+            <!-- TABELA PEDIDO DE COMPRAS (14 COLUNAS EXATAS) -->
+            <div class="table-container">
+                <table id="tableComprasData">
+                    <thead>
+                        <tr>
+                            <th>#1 SITUAÇÃO</th>
+                            <th>#2 PRODUTO</th>
+                            <th>#3 QUANTIDADE</th>
+                            <th>#4 LOJA</th>
+                            <th>#5 DEPARTAMENTO</th>
+                            <th>#6 VALOR UN.</th>
+                            <th>#7 VALOR TOTAL</th>
+                            <th>#8 DESCONTO</th>
+                            <th>#9 FRETE</th>
+                            <th>#10 IMPOSTO</th>
+                            <th>#11 TOTAL GERAL</th>
+                            <th>#12 LINK</th>
+                            <th>#13 UTILIDADE</th>
+                            <th>#14 OBSERVAÇÕES</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPT TIPO MODULE PARA SUPORTAR O FIREBASE -->
     <script type="module">
         // 1. IMPORTAÇÕES DO FIREBASE
@@ -708,7 +817,25 @@
         let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-        // --- FUNÇÃO PARA ESCONDER A TELA INICIAL COMO VISITANTE ---
+        // DADOS LOCAIS DE PEDIDO DE COMPRAS
+        let pedidosCompras = [
+            {
+                situacao: 'EM ABERTO',
+                produto: 'Notebook Dell Latitude',
+                qtd: 2,
+                loja: 'Dell',
+                departamento: 'TI',
+                valorUn: 4500.00,
+                desconto: 200.00,
+                frete: 50.00,
+                imposto: 0.00,
+                link: 'https://www.dell.com',
+                utilidade: 'Desenvolvimento de Sistemas',
+                obs: 'Aguardar liberação diretoria'
+            }
+        ];
+
+        // ESCONDER A TELA INICIAL COMO VISITANTE
         window.entrarVisitante = () => {
             document.getElementById('initialScreen').style.display = 'none';
         }
@@ -719,7 +846,7 @@
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('btnSair').style.display = 'inline-flex';
                 document.getElementById('btnAbrirLogin').style.display = 'none';
-                document.getElementById('initialScreen').style.display = 'none'; // Esconde tela inicial ao logar
+                document.getElementById('initialScreen').style.display = 'none';
                 fecharLogin();
             } else {
                 document.getElementById('labelUpload').style.display = 'none';
@@ -750,6 +877,7 @@
             populatePeriodFilter();
             populateGroupSelect();
             renderDashboard();
+            renderTabelaCompras();
         });
 
         // 5. FUNÇÕES DE AUTENTICAÇÃO
@@ -772,7 +900,6 @@
 
         window.fazerLogout = () => { 
             signOut(auth).then(() => {
-                // Ao deslogar, volta para a tela de escolha inicial
                 document.getElementById('initialScreen').style.display = 'flex';
             }); 
         }
@@ -804,7 +931,6 @@
                         }
                         const numVal = parseFloat(rawVal) || 0;
 
-                        // LÓGICA DE CORREÇÃO DA DATA
                         let rawDate = getVal(['DATA', 'DATA LANÇAMENTO', 'DATA PGTO']);
                         if (typeof rawDate === 'number') {
                             const jsDate = new Date((rawDate - 25569) * 86400 * 1000);
@@ -873,7 +999,7 @@
         }
 
         // ==========================================
-        // FUNÇÕES ORIGINAIS DO DASHBOARD E DA INTERFACE
+        // FUNÇÕES DO DASHBOARD E DA INTERFACE
         // ==========================================
         function updateTimestamp() {
             const now = new Date();
@@ -1255,6 +1381,111 @@
                     tbody.appendChild(tr);
                 });
             }
+        }
+
+        // ==========================================
+        // LÓGICA DA TABELA INTERATIVA PEDIDO DE COMPRAS
+        // ==========================================
+        function getStatusClass(status) {
+            switch(status) {
+                case 'EM ABERTO': return 'status-aberto';
+                case 'APROVADO': return 'status-aprovado';
+                case 'NÃO APROVADO': return 'status-nao-aprovado';
+                case 'EM ANALISE': return 'status-analise';
+                default: return 'status-aberto';
+            }
+        }
+
+        window.renderTabelaCompras = () => {
+            const tbody = document.querySelector('#tableComprasData tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            pedidosCompras.forEach((item, index) => {
+                // #7 VALOR TOTAL = Quantidade * Valor Un
+                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0);
+
+                // #11 TOTAL GERAL = Valor Total - Desconto + Frete + Imposto
+                const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra(${index}, this.value)">
+                            <option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option>
+                            <option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option>
+                            <option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option>
+                            <option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option>
+                        </select>
+                    </td>
+                    <td><b>${item.produto}</b></td>
+                    <td>${item.qtd}</td>
+                    <td>${item.loja}</td>
+                    <td>${item.departamento}</td>
+                    <td>${formatCurrency(item.valorUn)}</td>
+                    <td><b>${formatCurrency(valorTotal)}</b></td>
+                    <td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td>
+                    <td>${formatCurrency(item.frete)}</td>
+                    <td>${formatCurrency(item.imposto)}</td>
+                    <td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td>
+                    <td>${item.link ? `<a href="${item.link}" target="_blank" style="color:var(--secondary-blue);"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-'}</td>
+                    <td>${item.utilidade}</td>
+                    <td>${item.obs}</td>
+                    <td>
+                        <button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra(${index})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.addPedidoCompra = () => {
+            const prod = document.getElementById('compProd').value;
+            if(!prod) {
+                alert('Por favor, informe pelo menos a descrição do produto.');
+                return;
+            }
+
+            const novoItem = {
+                situacao: document.getElementById('compSit').value,
+                produto: prod,
+                qtd: parseFloat(document.getElementById('compQtd').value) || 0,
+                loja: document.getElementById('compLoja').value || '-',
+                departamento: document.getElementById('compDep').value || '-',
+                valorUn: parseFloat(document.getElementById('compValUn').value) || 0,
+                desconto: parseFloat(document.getElementById('compDesc').value) || 0,
+                frete: parseFloat(document.getElementById('compFrete').value) || 0,
+                imposto: parseFloat(document.getElementById('compImp').value) || 0,
+                link: document.getElementById('compLink').value || '',
+                utilidade: document.getElementById('compUtil').value || '-',
+                obs: document.getElementById('compObs').value || '-'
+            };
+
+            pedidosCompras.push(novoItem);
+            renderTabelaCompras();
+
+            // Limpa form
+            document.getElementById('compProd').value = '';
+            document.getElementById('compQtd').value = '1';
+            document.getElementById('compValUn').value = '0.00';
+            document.getElementById('compDesc').value = '0.00';
+            document.getElementById('compFrete').value = '0.00';
+            document.getElementById('compImp').value = '0.00';
+            document.getElementById('compLink').value = '';
+            document.getElementById('compUtil').value = '';
+            document.getElementById('compObs').value = '';
+        }
+
+        window.alterarStatusCompra = (index, novoStatus) => {
+            pedidosCompras[index].situacao = novoStatus;
+            renderTabelaCompras();
+        }
+
+        window.removerPedidoCompra = (index) => {
+            pedidosCompras.splice(index, 1);
+            renderTabelaCompras();
         }
 
         window.clearTabSelection = (fieldKey) => {
