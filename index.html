@@ -723,14 +723,22 @@
         </div>
     </div>
 
-    <!-- TAB 6: PEDIDO DE COMPRAS (NOVO) -->
+    <!-- TAB 6: PEDIDO DE COMPRAS -->
     <div id="tab-compras" class="tab-content">
         <div class="card">
             <div class="card-header">
                 <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras</div>
-                <button class="btn btn-outline" onclick="exportToExcel('tableComprasData', 'Pedidos_De_Compras')">
-                    <i class="fa-solid fa-file-excel"></i> Exportar Excel
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <!-- NOVO BOTÃO DE UPLOAD EXCLUSIVO PARA COMPRAS -->
+                    <label for="fileInputCompras" class="btn btn-outline" style="cursor: pointer; display: inline-flex;">
+                        <i class="fa-solid fa-file-import"></i> Carregar Planilha de Compras
+                    </label>
+                    <input type="file" id="fileInputCompras" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUploadCompras(event)">
+                    
+                    <button class="btn btn-outline" onclick="exportToExcel('tableComprasData', 'Pedidos_De_Compras')">
+                        <i class="fa-solid fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
             </div>
 
             <!-- FORMULÁRIO DE NOVO ITEM DE COMPRA -->
@@ -760,25 +768,25 @@
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
             </div>
 
-            <!-- TABELA PEDIDO DE COMPRAS (14 COLUNAS EXATAS) -->
+            <!-- TABELA PEDIDO DE COMPRAS (NOMES AJUSTADOS) -->
             <div class="table-container">
                 <table id="tableComprasData">
                     <thead>
                         <tr>
-                            <th>#1 SITUAÇÃO</th>
-                            <th>#2 PRODUTO</th>
-                            <th>#3 QUANTIDADE</th>
-                            <th>#4 LOJA</th>
-                            <th>#5 DEPARTAMENTO</th>
-                            <th>#6 VALOR UN.</th>
-                            <th>#7 VALOR TOTAL</th>
-                            <th>#8 DESCONTO</th>
-                            <th>#9 FRETE</th>
-                            <th>#10 IMPOSTO</th>
-                            <th>#11 TOTAL GERAL</th>
-                            <th>#12 LINK</th>
-                            <th>#13 UTILIDADE</th>
-                            <th>#14 OBSERVAÇÕES</th>
+                            <th>SITUAÇÃO</th>
+                            <th>PRODUTO</th>
+                            <th>QUANTIDADE</th>
+                            <th>LOJA</th>
+                            <th>DEPARTAMENTO</th>
+                            <th>VALOR UN.</th>
+                            <th>VALOR TOTAL</th>
+                            <th>DESCONTO</th>
+                            <th>FRETE</th>
+                            <th>IMPOSTO</th>
+                            <th>TOTAL GERAL</th>
+                            <th>LINK</th>
+                            <th>UTILIDADE</th>
+                            <th>OBSERVAÇÕES</th>
                             <th>AÇÕES</th>
                         </tr>
                     </thead>
@@ -904,7 +912,7 @@
             }); 
         }
 
-        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE
+        // 6. FUNÇÃO DE UPLOAD FLUIDO PARA O FIREBASE (TABELAS DE CUSTO GERAL)
         window.handleFileUpload = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -997,6 +1005,74 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
+        // ==========================================
+        // NOVA FUNÇÃO DE UPLOAD PARA PEDIDOS DE COMPRAS (LOCAL)
+        // ==========================================
+        window.handleFileUploadCompras = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+
+                if (jsonData.length > 0) {
+                    const novosPedidos = jsonData.map(row => {
+                        const getVal = (possibleNames) => {
+                            const foundKey = Object.keys(row).find(k => 
+                                possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase())
+                            );
+                            return foundKey ? row[foundKey] : '';
+                        };
+
+                        const parseNum = (val) => {
+                            if (typeof val === 'string') {
+                                val = val.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                            }
+                            return parseFloat(val) || 0;
+                        };
+
+                        let situacao = getVal(['SITUAÇÃO', 'SITUACAO', 'STATUS']) || 'EM ABERTO';
+                        let produto = getVal(['PRODUTO', 'ITEM', 'DESCRIÇÃO']) || '-';
+                        let qtd = parseNum(getVal(['QUANTIDADE', 'QTD']));
+                        let loja = getVal(['LOJA', 'FORNECEDOR']) || '-';
+                        let departamento = getVal(['DEPARTAMENTO', 'SETOR']) || '-';
+                        let valorUn = parseNum(getVal(['VALOR UN.', 'VALOR UN', 'PREÇO']));
+                        let desconto = parseNum(getVal(['DESCONTO']));
+                        let frete = parseNum(getVal(['FRETE']));
+                        let imposto = parseNum(getVal(['IMPOSTO', 'TAXA']));
+                        let link = getVal(['LINK', 'URL']) || '';
+                        let utilidade = getVal(['UTILIDADE', 'MOTIVO']) || '-';
+                        let obs = getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '-';
+
+                        return {
+                            situacao: situacao.toUpperCase(),
+                            produto,
+                            qtd: qtd || 1, 
+                            loja,
+                            departamento,
+                            valorUn,
+                            desconto,
+                            frete,
+                            imposto,
+                            link,
+                            utilidade,
+                            obs
+                        };
+                    });
+
+                    pedidosCompras = novosPedidos;
+                    renderTabelaCompras();
+                    document.getElementById('fileInputCompras').value = ""; 
+                    alert('Planilha de Pedidos de Compras carregada e atualizada na tabela com sucesso!');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
 
         // ==========================================
         // FUNÇÕES DO DASHBOARD E DA INTERFACE
@@ -1402,10 +1478,7 @@
             tbody.innerHTML = '';
 
             pedidosCompras.forEach((item, index) => {
-                // #7 VALOR TOTAL = Quantidade * Valor Un
                 const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0);
-
-                // #11 TOTAL GERAL = Valor Total - Desconto + Frete + Imposto
                 const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
 
                 const tr = document.createElement('tr');
@@ -1466,7 +1539,6 @@
             pedidosCompras.push(novoItem);
             renderTabelaCompras();
 
-            // Limpa form
             document.getElementById('compProd').value = '';
             document.getElementById('compQtd').value = '1';
             document.getElementById('compValUn').value = '0.00';
