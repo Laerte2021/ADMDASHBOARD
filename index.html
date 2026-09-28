@@ -483,7 +483,7 @@
             color: var(--text-secondary);
         }
 
-        /* MODAL DE LOGIN */
+        /* MODAL DE LOGIN E IDENTIFICACAO */
         .modal {
             display: none; 
             position: fixed; 
@@ -577,6 +577,17 @@
         </div>
     </div>
 
+    <!-- NOVO MODAL DE IDENTIFICAÇÃO (PEDIDO DE COMPRAS) -->
+    <div id="identificacaoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="fecharIdentificacao()">&times;</span>
+            <h3 style="margin-bottom: 10px; color: var(--primary-blue);"><i class="fa-solid fa-user-shield"></i> Identificação Necessária</h3>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">Para acessar a aba de Pedidos de Compras, identifique-se abaixo. Seu nome será registrado como aprovador.</p>
+            <input type="text" id="nomeAcessoInput" placeholder="Seu Nome Completo" />
+            <button onclick="confirmarNomeAcesso()" class="btn" style="width: 100%; justify-content: center; margin-top: 10px;"><i class="fa-solid fa-check"></i> Confirmar Acesso</button>
+        </div>
+    </div>
+
     <!-- Navigation Tabs -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('tab-geral', this)"><i class="fa-solid fa-house"></i> Visão Geral</button>
@@ -584,8 +595,8 @@
         <button class="tab-btn" onclick="switchTab('tab-categoria', this)"><i class="fa-solid fa-list-check"></i> Por Categoria</button>
         <button class="tab-btn" onclick="switchTab('tab-fornecedor', this)"><i class="fa-solid fa-truck"></i> Por Fornecedor</button>
         <button class="tab-btn" onclick="switchTab('tab-frequencia', this)"><i class="fa-solid fa-arrows-rotate"></i> Por Frequência</button>
-        <!-- BOTÃO DESTACADO PEDIDO DE COMPRAS -->
-        <button class="tab-btn highlight" onclick="switchTab('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
+        <!-- BOTÃO DESTACADO PEDIDO DE COMPRAS (COM NOVA FUNÇÃO DE VERIFICAÇÃO) -->
+        <button class="tab-btn highlight" onclick="verificarAcessoCompras('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
     </div>
 
     <!-- Period Boxes Container -->
@@ -780,7 +791,7 @@
                     <div class="form-group"><label>Link do Produto</label><input type="url" id="compLink" placeholder="https://..."></div>
                     <div class="form-group"><label>Utilidade</label><input type="text" id="compUtil" placeholder="Ex: Troca de cadeira quebrada"></div>
                     <div class="form-group"><label>Observações</label><input type="text" id="compObs" placeholder="Ex: Garantia 2 anos"></div>
-                    <div class="form-group"><label>Aprovador</label><input type="text" id="compAprov" placeholder="Ex: João Silva"></div>
+                    <div class="form-group"><label>Aprovador (Automático)</label><input type="text" id="compAprov" placeholder="Nome Aprovador" style="background-color: var(--border-color); color: var(--primary-blue); font-weight: bold;"></div>
                 </div>
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
             </div>
@@ -848,10 +859,49 @@
         let chartInstance = null;
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
+        // VARIÁVEIS DE ACESSO "PEDIDO DE COMPRAS"
+        window.nomeUsuarioCompras = "";
+        window.btnPendenteCompras = null;
+
         // ESCONDER A TELA INICIAL COMO VISITANTE
         window.entrarVisitante = () => {
             document.getElementById('initialScreen').style.display = 'none';
         }
+
+        // LÓGICA DE IDENTIFICAÇÃO NA ABA COMPRAS
+        window.verificarAcessoCompras = (tabId, btn) => {
+            if (tabId === 'tab-compras' && !window.nomeUsuarioCompras) {
+                window.btnPendenteCompras = btn;
+                document.getElementById('identificacaoModal').style.display = 'flex';
+                return;
+            }
+            switchTab(tabId, btn);
+        };
+
+        window.fecharIdentificacao = () => {
+            document.getElementById('identificacaoModal').style.display = 'none';
+        };
+
+        window.confirmarNomeAcesso = () => {
+            const nome = document.getElementById('nomeAcessoInput').value.trim();
+            if (!nome) {
+                alert("Por favor, digite seu nome completo para continuar.");
+                return;
+            }
+            window.nomeUsuarioCompras = nome;
+            
+            // Preenche e bloqueia o campo do aprovador no formulário
+            const inputAprov = document.getElementById('compAprov');
+            inputAprov.value = nome;
+            inputAprov.readOnly = true;
+
+            fecharIdentificacao();
+            
+            if (window.btnPendenteCompras) {
+                switchTab('tab-compras', window.btnPendenteCompras);
+            }
+            renderTabelaCompras();
+        };
 
         // 3. MONITORAR STATUS DE LOGIN
         onAuthStateChanged(auth, (user) => {
@@ -896,7 +946,6 @@
             if (isUpdatingCompras) return; 
             const fetchedData = [];
             snapshot.forEach((docSnap) => {
-                // Guarda o ID do documento para permitir edição direta
                 fetchedData.push({ id: docSnap.id, ...docSnap.data() });
             });
             pedidosCompras = fetchedData;
@@ -1547,6 +1596,13 @@
                 const deleteBtnHtml = isAdmin ? 
                     `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
 
+                // Lógica Melhorada dos Hiperlinks
+                let linkUrl = item.link ? item.link.trim() : '';
+                if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){
+                    linkUrl = 'https://' + linkUrl; // Força HTTPS para habilitar o clique perfeitamente
+                }
+                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Acessar Link</a>` : '-';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
@@ -1567,13 +1623,13 @@
                     <td>${formatCurrency(item.frete)}</td>
                     <td>${formatCurrency(item.imposto)}</td>
                     <td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td>
-                    <td>${item.link ? `<a href="${item.link}" target="_blank" style="color:var(--secondary-blue);"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-'}</td>
+                    <td>${linkHtml}</td>
                     <td>${item.utilidade}</td>
                     <td>
                         <input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}>
                     </td>
                     <td>
-                        <input type="text" value="${item.aprovador || ''}" placeholder="Seu nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}>
+                        <input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}>
                     </td>
                     <td>${deleteBtnHtml}</td>
                 `;
@@ -1601,7 +1657,8 @@
                 link: document.getElementById('compLink').value || '',
                 utilidade: document.getElementById('compUtil').value || '-',
                 obs: document.getElementById('compObs').value || '',
-                aprovador: document.getElementById('compAprov').value || ''
+                // Aprovador pega o input travado e validado do Modal
+                aprovador: document.getElementById('compAprov').value || window.nomeUsuarioCompras || '' 
             };
 
             try {
@@ -1617,7 +1674,7 @@
                 document.getElementById('compLink').value = '';
                 document.getElementById('compUtil').value = '';
                 document.getElementById('compObs').value = '';
-                document.getElementById('compAprov').value = '';
+                // Não limpamos o campo do aprovador para facilitar inclusões em sequência
             } catch (e) {
                 console.error("Erro ao adicionar item:", e);
                 alert("Erro ao adicionar item. Verifique sua conexão ou permissões.");
