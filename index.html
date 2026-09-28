@@ -1562,9 +1562,18 @@
             }
         }
 
-        // FUNÇÃO PARA ATUALIZAR STATUS NO FIREBASE
+        // FUNÇÃO PARA ATUALIZAR STATUS NO FIREBASE (MODIFICADA)
         window.alterarStatusCompra = async (docId, novoStatus) => {
-            try { await updateDoc(doc(db, "pedidos_compras", docId), { situacao: novoStatus }); } 
+            try { 
+                let updateData = { situacao: novoStatus };
+                
+                // Se a pessoa estiver identificada, o nome dela assume automaticamente como aprovador
+                if (window.nomeUsuarioCompras) {
+                    updateData.aprovador = window.nomeUsuarioCompras;
+                }
+                
+                await updateDoc(doc(db, "pedidos_compras", docId), updateData); 
+            } 
             catch(e) { console.error("Erro ao atualizar status:", e); }
         }
 
