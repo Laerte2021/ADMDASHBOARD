@@ -502,7 +502,16 @@
                 <div class="form-group"><label>Título do Pedido</label><input type="text" id="manutTitulo" placeholder="Ex: Conserto do Ar Condicionado Sala 2"></div>
                 <div class="form-group"><label>Setor / Local</label><input type="text" id="manutLocal" placeholder="Ex: Recepção"></div>
             </div>
-            <button class="btn" style="background-color: var(--teal-color); margin-top: 10px;" onclick="addPedidoManutencao()"><i class="fa-solid fa-check"></i> Abrir Solicitação de Cotações</button>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn" style="background-color: var(--teal-color);" onclick="addPedidoManutencao()"><i class="fa-solid fa-check"></i> Abrir Solicitação de Cotações</button>
+                
+                <!-- NOVO BOTÃO DE UPLOAD DE MANUTENÇÃO -->
+                <label for="fileInputManutencao" id="labelUploadManutencao" class="btn btn-outline" style="cursor: pointer; color: var(--teal-color); border-color: var(--teal-color); display: none;">
+                    <i class="fa-solid fa-file-import"></i> Carregar Planilha de Manutenção
+                </label>
+                <input type="file" id="fileInputManutencao" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUploadManutencao(event)">
+            </div>
         </div>
 
         <!-- PEDIDOS EM ABERTO -->
@@ -604,6 +613,11 @@
                 isAdmin = true;
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('labelUploadCompras').style.display = 'inline-flex';
+                
+                // NOVO LABEL MANUTENÇÃO VISÍVEL PARA ADMIN
+                const lblManutencao = document.getElementById('labelUploadManutencao');
+                if(lblManutencao) lblManutencao.style.display = 'inline-flex';
+
                 document.getElementById('formComprasContainer').style.display = 'block';
                 document.getElementById('formManutencaoContainer').style.display = 'block';
                 document.getElementById('btnSair').style.display = 'inline-flex';
@@ -614,6 +628,11 @@
                 isAdmin = false;
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
+                
+                // OCULTA LABEL MANUTENÇÃO PARA GUEST
+                const lblManutencao = document.getElementById('labelUploadManutencao');
+                if(lblManutencao) lblManutencao.style.display = 'none';
+
                 document.getElementById('formComprasContainer').style.display = 'none';
                 document.getElementById('formManutencaoContainer').style.display = 'none';
                 document.getElementById('btnSair').style.display = 'none';
@@ -657,9 +676,6 @@
             signInWithEmailAndPassword(auth, email, senha).then(() => { document.getElementById('loginMsg').innerText = ""; }).catch(() => { document.getElementById('loginMsg').innerText = "Erro: E-mail ou senha incorretos."; });
         }
         window.fazerLogout = () => { signOut(auth).then(() => { document.getElementById('initialScreen').style.display = 'flex'; }); }
-
-        // MÉTODOS UPLOAD (REMOVIDOS DAQUI PARA BREVIDADE, MAS SÃO OS MESMOS DO SEU CÓDIGO)
-        // Eles continuam funcionando nos inputs file
         
         // CUSTOS GERAIS UPLOAD
         window.handleFileUpload = async (e) => {
@@ -689,10 +705,10 @@
         }
 
         // ==========================================
-        // CÓDIGO DA NOVA ABA DE MANUTENÇÃO
+        // CÓDIGO DA NOVA ABA DE MANUTENÇÃO E UPLOAD
         // ==========================================
         
-        // Criar um template vazio para as 5 placas na hora de criar o pedido
+        // Criar um template vazio para as 5 placas
         function gerarPlacasVazias() {
             let placas = [];
             for(let i=0; i<5; i++){
@@ -726,6 +742,64 @@
                 document.getElementById('manutTitulo').value = "";
                 document.getElementById('manutLocal').value = "";
             } catch (e) { console.error(e); alert("Erro ao criar."); }
+        };
+
+        // NOVA FUNÇÃO: UPLOAD DE PLANILHA DE MANUTENÇÃO
+        window.handleFileUploadManutencao = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+
+                if (jsonData.length > 0) {
+                    const novosPedidos = jsonData.map(row => {
+                        const getVal = (possibleNames) => {
+                            const foundKey = Object.keys(row).find(k => possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase()));
+                            return foundKey ? row[foundKey] : '';
+                        };
+
+                        let titulo = getVal(['TÍTULO', 'TITULO', 'DESCRIÇÃO', 'DESCRICAO', 'SERVIÇO', 'SERVICO']) || 'Manutenção Diversa';
+                        let local = getVal(['LOCAL', 'SETOR', 'DEPARTAMENTO']) || 'Não informado';
+
+                        return {
+                            titulo: titulo,
+                            local: local,
+                            situacao: "EM ABERTO",
+                            questionamento: "",
+                            aprovador: "",
+                            dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                            placas: gerarPlacasVazias()
+                        };
+                    });
+
+                    const status = document.getElementById('statusFirebase');
+                    status.innerText = "Sincronizando Manutenções...";
+                    status.style.color = "orange";
+
+                    try {
+                        for (let i = 0; i < novosPedidos.length; i++) {
+                            await addDoc(collection(db, "manutencao"), novosPedidos[i]);
+                        }
+                        
+                        status.innerText = "Online (Sincronizado)";
+                        status.style.color = "green";
+                        
+                        document.getElementById('fileInputManutencao').value = "";
+                        alert('Planilha de Manutenção carregada e sincronizada com sucesso!');
+                    } catch (error) {
+                        console.error("Erro no Firebase:", error);
+                        alert("Erro ao salvar manutenções. Verifique suas permissões.");
+                        status.innerText = "Erro ao salvar";
+                        status.style.color = "red";
+                    }
+                }
+            };
+            reader.readAsArrayBuffer(file);
         };
 
         // Atualizar campos de uma placa específica
