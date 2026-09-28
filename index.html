@@ -309,13 +309,32 @@
         .manutencao-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
         
         .placas-wrapper { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .placa-card { min-width: 300px; border: 1px solid #000; background: #fff; color: #000; border-collapse: collapse; font-size: 12px; }
+        .placa-card { min-width: 300px; border: 1px solid #000; background: #fff; color: #000; border-collapse: collapse; font-size: 12px; transition: 0.3s; }
         .placa-card th, .placa-card td { border: 1px solid #000; padding: 4px 6px; text-align: center; }
         .placa-card .teal-bg { background-color: var(--teal-color); color: white; font-weight: bold; }
         .placa-card input { width: 100%; border: none; background: transparent; text-align: center; font-size: 12px; }
         .placa-card input:focus { outline: 1px solid var(--secondary-blue); }
         
         .diretoria-controls { background: var(--hover-blue); border: 1px dashed var(--secondary-blue); padding: 15px; border-radius: 8px; margin-top: 15px; }
+
+        /* DESTAQUE DE COTAÇÃO APROVADA */
+        .placa-aprovada {
+            border: 3px solid #10b981 !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .selo-aprovado {
+            background-color: #10b981;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            padding: 6px !important;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: none !important;
+        }
     </style>
 </head>
 <body>
@@ -495,7 +514,7 @@
 
     <!-- TAB 7: NOVA ABA MANUTENÇÃO -->
     <div id="tab-manutencao" class="tab-content">
-        <!-- ÁREA PARA ADICIONAR NOVO PEDIDO (Visível apenas para admins) -->
+        <!-- ÁREA PARA ADICIONAR NOVO PEDIDO E BOTÕES DE PLANILHA -->
         <div id="formManutencaoContainer" style="display: none; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--teal-color);">
             <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--teal-color);"><i class="fa-solid fa-plus-circle"></i> Novo Pedido de Manutenção</h4>
             <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
@@ -503,12 +522,17 @@
                 <div class="form-group"><label>Setor / Local</label><input type="text" id="manutLocal" placeholder="Ex: Recepção"></div>
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                 <button class="btn" style="background-color: var(--teal-color);" onclick="addPedidoManutencao()"><i class="fa-solid fa-check"></i> Abrir Solicitação de Cotações</button>
                 
-                <!-- NOVO BOTÃO DE UPLOAD DE MANUTENÇÃO -->
+                <!-- NOVO BOTÃO DE DOWNLOAD DO MODELO -->
+                <button id="btnDownloadModeloManutencao" class="btn btn-outline" style="color: var(--teal-color); border-color: var(--teal-color); display: none;" onclick="baixarModeloManutencao()">
+                    <i class="fa-solid fa-download"></i> Baixar Modelo de Planilha
+                </button>
+
+                <!-- BOTÃO DE UPLOAD DE MANUTENÇÃO -->
                 <label for="fileInputManutencao" id="labelUploadManutencao" class="btn btn-outline" style="cursor: pointer; color: var(--teal-color); border-color: var(--teal-color); display: none;">
-                    <i class="fa-solid fa-file-import"></i> Carregar Planilha de Manutenção
+                    <i class="fa-solid fa-file-import"></i> Carregar Planilha Preenchida
                 </label>
                 <input type="file" id="fileInputManutencao" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUploadManutencao(event)">
             </div>
@@ -614,9 +638,11 @@
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('labelUploadCompras').style.display = 'inline-flex';
                 
-                // NOVO LABEL MANUTENÇÃO VISÍVEL PARA ADMIN
+                // BOTÕES DA ABA MANUTENÇÃO VISÍVEIS PARA ADMIN
                 const lblManutencao = document.getElementById('labelUploadManutencao');
                 if(lblManutencao) lblManutencao.style.display = 'inline-flex';
+                const btnModManutencao = document.getElementById('btnDownloadModeloManutencao');
+                if(btnModManutencao) btnModManutencao.style.display = 'inline-flex';
 
                 document.getElementById('formComprasContainer').style.display = 'block';
                 document.getElementById('formManutencaoContainer').style.display = 'block';
@@ -629,9 +655,11 @@
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
                 
-                // OCULTA LABEL MANUTENÇÃO PARA GUEST
+                // OCULTA BOTÕES MANUTENÇÃO PARA GUEST
                 const lblManutencao = document.getElementById('labelUploadManutencao');
                 if(lblManutencao) lblManutencao.style.display = 'none';
+                const btnModManutencao = document.getElementById('btnDownloadModeloManutencao');
+                if(btnModManutencao) btnModManutencao.style.display = 'none';
 
                 document.getElementById('formComprasContainer').style.display = 'none';
                 document.getElementById('formManutencaoContainer').style.display = 'none';
@@ -734,6 +762,7 @@
                 questionamento: "",
                 aprovador: "",
                 dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                placaAprovadaIndex: null, // Novo campo para rastrear qual placa venceu
                 placas: gerarPlacasVazias()
             };
 
@@ -742,6 +771,18 @@
                 document.getElementById('manutTitulo').value = "";
                 document.getElementById('manutLocal').value = "";
             } catch (e) { console.error(e); alert("Erro ao criar."); }
+        };
+
+        // NOVA FUNÇÃO: DOWNLOAD DE MODELO DE PLANILHA
+        window.baixarModeloManutencao = () => {
+            const modelo = [
+                { "TÍTULO": "Ex: Conserto Ar Condicionado Sala 2", "SETOR": "Recepção" },
+                { "TÍTULO": "Ex: Reparo de Computadores", "SETOR": "TI" }
+            ];
+            const ws = XLSX.utils.json_to_sheet(modelo);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Modelo_Manutencao");
+            XLSX.writeFile(wb, "Modelo_Upload_Manutencao.xlsx");
         };
 
         // NOVA FUNÇÃO: UPLOAD DE PLANILHA DE MANUTENÇÃO
@@ -773,6 +814,7 @@
                             questionamento: "",
                             aprovador: "",
                             dataCriacao: new Date().toLocaleDateString('pt-BR'),
+                            placaAprovadaIndex: null,
                             placas: gerarPlacasVazias()
                         };
                     });
@@ -812,11 +854,34 @@
             }
         };
 
-        // Alterar Status pela Diretoria (Preenche aprovador auto)
+        // NOVA FUNÇÃO: DIRETORIA APROVAR UMA PLACA ESPECÍFICA
+        window.aprovarCotacaoManutencao = async (docId, placaIndex) => {
+            if(!window.nomeUsuarioRestrito) {
+                alert("Identifique-se primeiro recarregando a aba Manutenção.");
+                return;
+            }
+            if(confirm("Confirma a aprovação exclusiva desta cotação?")) {
+                try {
+                    await updateDoc(doc(db, "manutencao", docId), {
+                        situacao: "APROVADA",
+                        aprovador: window.nomeUsuarioRestrito,
+                        placaAprovadaIndex: placaIndex
+                    });
+                } catch(e) {
+                    console.error("Erro ao aprovar cotação específica:", e);
+                }
+            }
+        };
+
+        // Alterar Status geral pela Diretoria (Preenche aprovador auto)
         window.alterarStatusManut = async (docId, novoStatus) => {
             let updateData = { situacao: novoStatus };
             if (window.nomeUsuarioRestrito) {
                 updateData.aprovador = window.nomeUsuarioRestrito;
+            }
+            // Se mudou pra algo diferente de 'APROVADA', remove o destaque da placa
+            if (novoStatus !== "APROVADA") {
+                updateData.placaAprovadaIndex = null;
             }
             await updateDoc(doc(db, "manutencao", docId), updateData);
         };
@@ -847,8 +912,11 @@
                 
                 let placasHtml = "";
                 item.placas.forEach((placa, index) => {
+                    const isPlacaAprovada = item.placaAprovadaIndex === index;
+                    
                     placasHtml += `
-                    <table class="placa-card">
+                    <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
+                        ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
                         <tr><th colspan="4" class="teal-bg"><input type="text" placeholder="Nome da Empresa" value="${placa.empresa || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'empresa', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">CNPJ: <input type="text" style="width:70%; color:white;" placeholder="00.000.000/0000-00" value="${placa.cnpj || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'cnpj', this.value)" ${isBlocked}></th></tr>
                         <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
@@ -868,6 +936,13 @@
                         <tr><th colspan="4" class="teal-bg">Prazo: <input type="text" style="width:70%; color:white;" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Emissão de NF: <input type="text" style="width:60%; color:white;" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Forma Pgto: <input type="text" style="width:60%; color:white;" value="${placa.pagamento || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'pagamento', this.value)" ${isBlocked}></th></tr>
+                        
+                        ${!isPlacaAprovada ? `
+                        <tr><td colspan="4" style="padding: 10px;">
+                            <button class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}>
+                                <i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação
+                            </button>
+                        </td></tr>` : ''}
                     </table>
                     `;
                 });
@@ -892,7 +967,7 @@
                         <h4 style="font-size: 13px; color: var(--primary-blue); margin-bottom: 10px;"><i class="fa-solid fa-gavel"></i> Avaliação da Diretoria</h4>
                         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;">
-                                <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Decisão / Status</label><br>
+                                <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Decisão / Status Geral</label><br>
                                 <select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusManut('${item.id}', this.value)" ${isBlocked} style="margin-top:4px; width: 100%;">
                                     <option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO (Aguardando)</option>
                                     <option value="APROVADA" ${item.situacao === 'APROVADA' ? 'selected' : ''}>APROVADA</option>
