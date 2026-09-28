@@ -736,13 +736,19 @@
         // CÓDIGO DA NOVA ABA DE MANUTENÇÃO E UPLOAD
         // ==========================================
         
-        // Criar um template vazio para as 5 placas
+        // Criar um template vazio para as 5 placas com suporte a 5 linhas
         function gerarPlacasVazias() {
             let placas = [];
             for(let i=0; i<5; i++){
                 placas.push({
                     empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
-                    itens: "", qtde: "", valorUn: "", valorTotalItem: "",
+                    linhas: [
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" }
+                    ],
                     valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
                 });
             }
@@ -844,12 +850,34 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // Atualizar campos de uma placa específica
+        // Atualizar campos GERAIS de uma placa específica
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
                 let novasPlacas = [...pedido.placas];
                 novasPlacas[placaIndex][campo] = valor;
+                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+            }
+        };
+
+        // NOVA FUNÇÃO: ATUALIZAR LINHA ESPECÍFICA DENTRO DA PLACA (Para suportar as 5 linhas)
+        window.atualizarLinhaPlacaManutencao = async (docId, placaIndex, linhaIndex, campo, valor) => {
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = [...pedido.placas];
+                
+                // Regra de retrocompatibilidade (se o dado for muito antigo e não tiver 'linhas')
+                if (!novasPlacas[placaIndex].linhas) {
+                    novasPlacas[placaIndex].linhas = [
+                        { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
+                        { item: "", qtde: "", valorUn: "", valorTotal: "" }
+                    ];
+                }
+
+                novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor;
                 await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
             }
         };
@@ -914,6 +942,27 @@
                 item.placas.forEach((placa, index) => {
                     const isPlacaAprovada = item.placaAprovadaIndex === index;
                     
+                    // Garante que a placa tenha o array de 5 linhas (para compatibilidade com dados antigos)
+                    let linhasData = placa.linhas || [
+                        {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""},
+                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
+                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
+                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
+                        {item: "", qtde: "", valorUn: "", valorTotal: ""}
+                    ];
+
+                    let linhasHtml = "";
+                    for(let r=0; r<5; r++){
+                        linhasHtml += `
+                        <tr>
+                            <td><input type="text" value="${linhasData[r].item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked}></td>
+                            <td><input type="text" value="${linhasData[r].qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td>
+                            <td><input type="text" value="${linhasData[r].valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td>
+                            <td><input type="text" value="${linhasData[r].valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked}></td>
+                        </tr>
+                        `;
+                    }
+                    
                     placasHtml += `
                     <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
                         ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
@@ -924,14 +973,9 @@
                         <tr><td colspan="4"><a href="${placa.site && !placa.site.startsWith('http') ? 'https://'+placa.site : placa.site || '#'}" target="_blank" style="color:var(--secondary-blue);">Site:</a> <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
                         
                         <tr><th class="teal-bg" style="font-size:10px;">Itens</th><th class="teal-bg" style="font-size:10px;">Qtde</th><th class="teal-bg" style="font-size:10px;">Valor Unit.</th><th class="teal-bg" style="font-size:10px;">Valor Total</th></tr>
-                        <tr>
-                            <td><input type="text" value="${placa.itens || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'itens', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${placa.qtde || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'qtde', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${placa.valorUn || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorUn', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${placa.valorTotalItem || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalItem', this.value)" ${isBlocked}></td>
-                        </tr>
+                        ${linhasHtml}
                         <tr><td colspan="4">&nbsp;</td></tr>
-                        <tr><td colspan="2"><b>Valor total</b></td><td colspan="2">R$ <input type="text" style="width:60%; font-weight:bold;" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></td></tr>
+                        <tr><td colspan="2"><b>Valor total geral</b></td><td colspan="2">R$ <input type="text" style="width:60%; font-weight:bold;" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></td></tr>
                         
                         <tr><th colspan="4" class="teal-bg">Prazo: <input type="text" style="width:70%; color:white;" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Emissão de NF: <input type="text" style="width:60%; color:white;" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></th></tr>
