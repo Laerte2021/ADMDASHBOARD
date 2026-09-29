@@ -992,7 +992,7 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO)
+        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO E CORRIGIDO - DEEP COPY)
         // ==========================================
         
         function gerarPlacasVazias() {
@@ -1053,17 +1053,22 @@
             }; reader.readAsArrayBuffer(file);
         };
 
+        // CORREÇÃO: Utilizando DEEP COPY para forçar o Firebase a salvar
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
-            if(pedido) { let novasPlacas = [...pedido.placas]; novasPlacas[placaIndex][campo] = valor; await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); }
+            if(pedido) { 
+                let novasPlacas = JSON.parse(JSON.stringify(pedido.placas)); 
+                novasPlacas[placaIndex][campo] = valor; 
+                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); 
+            }
         };
 
+        // CORREÇÃO: Utilizando DEEP COPY para forçar o Firebase a salvar
         window.atualizarLinhaPlacaManutencao = async (docId, placaIndex, linhaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
-                let novasPlacas = [...pedido.placas];
+                let novasPlacas = JSON.parse(JSON.stringify(pedido.placas));
                 if (!novasPlacas[placaIndex].linhas) { 
-                    // Retrocompatibilidade
                     novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ]; 
                 }
                 novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor;
@@ -1071,11 +1076,11 @@
             }
         };
 
-        // NOVA FUNÇÃO: ADICIONAR LINHA DINAMICAMENTE
+        // NOVA FUNÇÃO: ADICIONAR LINHA DINAMICAMENTE (CORRIGIDA COM DEEP COPY)
         window.adicionarNovaLinhaPlaca = async (docId, placaIndex) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
-                let novasPlacas = [...pedido.placas];
+                let novasPlacas = JSON.parse(JSON.stringify(pedido.placas));
                 if (!novasPlacas[placaIndex].linhas) {
                     novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ];
                 }
@@ -1084,12 +1089,12 @@
             }
         };
 
-        // NOVA FUNÇÃO: REMOVER LINHA DINAMICAMENTE
+        // NOVA FUNÇÃO: REMOVER LINHA DINAMICAMENTE (CORRIGIDA COM DEEP COPY)
         window.removerLinhaPlaca = async (docId, placaIndex, linhaIndex) => {
             if(!confirm("Deseja remover esta linha de item?")) return;
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
-                let novasPlacas = [...pedido.placas];
+                let novasPlacas = JSON.parse(JSON.stringify(pedido.placas));
                 if (novasPlacas[placaIndex].linhas && novasPlacas[placaIndex].linhas.length > 1) {
                     novasPlacas[placaIndex].linhas.splice(linhaIndex, 1);
                     await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
