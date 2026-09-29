@@ -25,6 +25,7 @@
             --table-header: #0f172a;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --teal-color: #008B8B;
+            --endo-color: #8b5cf6;
         }
 
         [data-theme="dark"] {
@@ -40,6 +41,7 @@
             --table-header: #020617;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
             --teal-color: #006666;
+            --endo-color: #7c3aed;
         }
 
         * {
@@ -158,7 +160,7 @@
             background-color: var(--hover-blue);
         }
 
-        select, input[type="text"], input[type="number"], input[type="url"] {
+        select, input[type="text"], input[type="number"], input[type="url"], input[type="date"] {
             padding: 8px 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -167,7 +169,7 @@
             font-size: 13px;
         }
 
-        select:disabled, input:disabled {
+        select:disabled, input:disabled, textarea:disabled {
             opacity: 0.7;
             cursor: not-allowed;
             background-color: var(--bg-color);
@@ -217,7 +219,7 @@
         }
         .tab-btn.highlight:hover { background-color: var(--secondary-blue); }
 
-        /* Novo Botão Manutenção */
+        /* Botão Manutenção */
         .tab-btn.highlight-teal {
             background-color: var(--teal-color);
             color: #ffffff !important;
@@ -225,6 +227,15 @@
             box-shadow: var(--shadow);
         }
         .tab-btn.highlight-teal:hover { background-color: #00a3a3; }
+
+        /* Botão Endomarketing */
+        .tab-btn.highlight-purple {
+            background-color: var(--endo-color);
+            color: #ffffff !important;
+            border-radius: 8px 8px 0 0;
+            box-shadow: var(--shadow);
+        }
+        .tab-btn.highlight-purple:hover { background-color: #7c3aed; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -293,7 +304,7 @@
         .table-input { width: 100%; min-width: 120px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--card-bg); color: var(--text-color); font-size: 12px; }
         input[type="file"] { display: none; }
 
-        /* Form Pedido Compras / Manutencao */
+        /* Form Pedido Compras / Manutencao / Endomarketing */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group label { font-size: 11px; font-weight: bold; color: var(--text-secondary); }
@@ -314,28 +325,22 @@
         .placa-card .teal-bg { background-color: var(--teal-color); color: white; font-weight: bold; }
         .placa-card input { width: 100%; border: none; background: transparent; text-align: center; font-size: 12px; }
         .placa-card input:focus { outline: 1px solid var(--secondary-blue); }
-        .placa-card .teal-bg input::placeholder { color: rgba(255, 255, 255, 0.7); } /* Placeholders claros no fundo escuro */
+        .placa-card .teal-bg input::placeholder { color: rgba(255, 255, 255, 0.7); }
         
         .diretoria-controls { background: var(--hover-blue); border: 1px dashed var(--secondary-blue); padding: 15px; border-radius: 8px; margin-top: 15px; }
 
-        /* DESTAQUE DE COTAÇÃO APROVADA */
-        .placa-aprovada {
-            border: 3px solid #10b981 !important;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
-            transform: scale(1.02);
-            z-index: 10;
-        }
-        .selo-aprovado {
-            background-color: #10b981;
-            color: white;
-            text-align: center;
-            font-weight: bold;
-            padding: 6px !important;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: none !important;
-        }
+        .placa-aprovada { border: 3px solid #10b981 !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important; transform: scale(1.02); z-index: 10; }
+        .selo-aprovado { background-color: #10b981; color: white; text-align: center; font-weight: bold; padding: 6px !important; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: none !important; }
+
+        /* ================== ESTILOS ESPECÍFICOS DA ABA ENDOMARKETING ================== */
+        .endo-card { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; padding: 20px; background: var(--card-bg); box-shadow: var(--shadow); border-top: 4px solid var(--endo-color); }
+        .endo-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .endo-gallery { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; margin-top: 10px; border: 1px dashed var(--border-color); border-radius: 8px; min-height: 120px; align-items: center; justify-content: flex-start; padding-left: 10px;}
+        .endo-photo-wrap { position: relative; display: inline-block; flex-shrink: 0;}
+        .endo-photo { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.3s;}
+        .endo-photo:hover { transform: scale(1.05); }
+        .endo-photo-del { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 11px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .endo-total-banner { margin-top: 15px; padding: 15px; background-color: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 5px solid var(--endo-color); display: flex; align-items: center; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -421,8 +426,10 @@
         <button class="tab-btn" onclick="switchTab('tab-frequencia', this)"><i class="fa-solid fa-arrows-rotate"></i> Por Frequência</button>
         
         <button class="tab-btn highlight" onclick="verificarAcessoRestrito('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
-        <!-- ABA DE MANUTENÇÃO -->
         <button class="tab-btn highlight-teal" onclick="verificarAcessoRestrito('tab-manutencao', this)"><i class="fa-solid fa-screwdriver-wrench"></i> MANUTENÇÃO</button>
+        
+        <!-- NOVA ABA DE ENDOMARKETING -->
+        <button class="tab-btn highlight-purple" onclick="switchTab('tab-endomarketing', this)"><i class="fa-solid fa-bullhorn"></i> ENDOMARKETING</button>
     </div>
 
     <!-- Period Boxes -->
@@ -513,7 +520,7 @@
         </div>
     </div>
 
-    <!-- TAB 7: NOVA ABA MANUTENÇÃO -->
+    <!-- TAB 7: ABA MANUTENÇÃO -->
     <div id="tab-manutencao" class="tab-content">
         <!-- ÁREA PARA ADICIONAR NOVO PEDIDO E BOTÕES DE PLANILHA -->
         <div id="formManutencaoContainer" style="display: none; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--teal-color);">
@@ -526,12 +533,10 @@
             <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                 <button class="btn" style="background-color: var(--teal-color);" onclick="addPedidoManutencao()"><i class="fa-solid fa-check"></i> Abrir Solicitação de Cotações</button>
                 
-                <!-- NOVO BOTÃO DE DOWNLOAD DO MODELO -->
                 <button id="btnDownloadModeloManutencao" class="btn btn-outline" style="color: var(--teal-color); border-color: var(--teal-color); display: none;" onclick="baixarModeloManutencao()">
                     <i class="fa-solid fa-download"></i> Baixar Modelo de Planilha
                 </button>
 
-                <!-- BOTÃO DE UPLOAD DE MANUTENÇÃO -->
                 <label for="fileInputManutencao" id="labelUploadManutencao" class="btn btn-outline" style="cursor: pointer; color: var(--teal-color); border-color: var(--teal-color); display: none;">
                     <i class="fa-solid fa-file-import"></i> Carregar Planilha Preenchida
                 </label>
@@ -539,24 +544,40 @@
             </div>
         </div>
 
-        <!-- PEDIDOS EM ABERTO -->
         <div class="card">
             <div class="card-header">
                 <div class="card-title" style="color: var(--teal-color);"><i class="fa-solid fa-list-check"></i> Pedidos em Aberto (Aguardando Avaliação da Diretoria)</div>
             </div>
-            <div id="manutencaoAbertoContainer">
-                <!-- Os itens em aberto renderizam aqui -->
-            </div>
+            <div id="manutencaoAbertoContainer"></div>
         </div>
 
-        <!-- HISTÓRICO -->
         <div class="card">
             <div class="card-header">
                 <div class="card-title" style="color: var(--text-secondary);"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Manutenções Avaliadas</div>
             </div>
-            <div id="manutencaoHistoricoContainer">
-                <!-- Os itens finalizados renderizam aqui -->
+            <div id="manutencaoHistoricoContainer"></div>
+        </div>
+    </div>
+
+    <!-- TAB 8: NOVA ABA ENDOMARKETING -->
+    <div id="tab-endomarketing" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title" style="color: var(--endo-color);"><i class="fa-solid fa-bullhorn"></i> Mural de Campanhas - Endomarketing</div>
             </div>
+
+            <!-- Formulário Nova Campanha (Apenas Admin) -->
+            <div id="formEndoContainer" style="display: none; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px dashed var(--endo-color);">
+                <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--endo-color);"><i class="fa-solid fa-plus-circle"></i> Nova Campanha de Endomarketing</h4>
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="form-group"><label>Título da Campanha</label><input type="text" id="endoTitulo" placeholder="Ex: Festa Junina 2024"></div>
+                    <div class="form-group"><label>Data da Campanha</label><input type="date" id="endoData"></div>
+                </div>
+                <button class="btn" style="background-color: var(--endo-color); margin-top: 10px;" onclick="addCampanhaEndo()"><i class="fa-solid fa-check"></i> Criar Mural da Campanha</button>
+            </div>
+
+            <!-- Container onde os cards de campanhas serão gerados -->
+            <div id="endoCardsContainer"></div>
         </div>
     </div>
 
@@ -583,6 +604,7 @@
         let rawData = [];
         let pedidosCompras = [];
         let pedidosManutencao = [];
+        let campanhasEndo = []; // Nova variável para armazenar campanhas
         let isAdmin = false; 
         let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
         let currentPeriod = 'ALL'; 
@@ -639,7 +661,6 @@
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('labelUploadCompras').style.display = 'inline-flex';
                 
-                // BOTÕES DA ABA MANUTENÇÃO VISÍVEIS PARA ADMIN
                 const lblManutencao = document.getElementById('labelUploadManutencao');
                 if(lblManutencao) lblManutencao.style.display = 'inline-flex';
                 const btnModManutencao = document.getElementById('btnDownloadModeloManutencao');
@@ -647,6 +668,11 @@
 
                 document.getElementById('formComprasContainer').style.display = 'block';
                 document.getElementById('formManutencaoContainer').style.display = 'block';
+                
+                // Exibe formulário do Endomarketing
+                const formEndo = document.getElementById('formEndoContainer');
+                if(formEndo) formEndo.style.display = 'block';
+
                 document.getElementById('btnSair').style.display = 'inline-flex';
                 document.getElementById('btnAbrirLogin').style.display = 'none';
                 document.getElementById('initialScreen').style.display = 'none';
@@ -656,7 +682,6 @@
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
                 
-                // OCULTA BOTÕES MANUTENÇÃO PARA GUEST
                 const lblManutencao = document.getElementById('labelUploadManutencao');
                 if(lblManutencao) lblManutencao.style.display = 'none';
                 const btnModManutencao = document.getElementById('btnDownloadModeloManutencao');
@@ -664,11 +689,17 @@
 
                 document.getElementById('formComprasContainer').style.display = 'none';
                 document.getElementById('formManutencaoContainer').style.display = 'none';
+                
+                // Oculta formulário do Endomarketing
+                const formEndo = document.getElementById('formEndoContainer');
+                if(formEndo) formEndo.style.display = 'none';
+
                 document.getElementById('btnSair').style.display = 'none';
                 document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
             }
             renderTabelaCompras();
             renderTelasManutencao();
+            renderEndomarketing(); // Re-renderiza abas para mostrar/esconder inputs
         });
 
         // LISTENERS FIREBASE
@@ -695,6 +726,17 @@
             renderTelasManutencao();
         });
 
+        // NOVO LISTENER: ENDOMARKETING
+        onSnapshot(collection(db, "endomarketing"), (snapshot) => {
+            const fetchedData = [];
+            snapshot.forEach((docSnap) => fetchedData.push({ id: docSnap.id, ...docSnap.data() }));
+            
+            // Ordenar por data de criação (mais recente primeiro)
+            fetchedData.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
+            campanhasEndo = fetchedData;
+            renderEndomarketing();
+        });
+
         // AUTENTICAÇÃO
         window.abrirLogin = () => { document.getElementById('loginModal').style.display = 'flex'; }
         window.fecharLogin = () => { document.getElementById('loginModal').style.display = 'none'; document.getElementById('loginMsg').innerText = ''; }
@@ -706,7 +748,9 @@
         }
         window.fazerLogout = () => { signOut(auth).then(() => { document.getElementById('initialScreen').style.display = 'flex'; }); }
         
+        // ==========================================
         // CUSTOS GERAIS UPLOAD
+        // ==========================================
         window.handleFileUpload = async (e) => {
             const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
@@ -734,10 +778,229 @@
         }
 
         // ==========================================
-        // CÓDIGO DA NOVA ABA DE MANUTENÇÃO E UPLOAD
+        // CÓDIGO DA NOVA ABA DE ENDOMARKETING
         // ==========================================
         
-        // Criar um template vazio para as 5 placas com suporte a 5 linhas
+        window.addCampanhaEndo = async () => {
+            const titulo = document.getElementById('endoTitulo').value;
+            const data = document.getElementById('endoData').value;
+            
+            if(!titulo || !data) { alert("Por favor, preencha o Título e a Data da Campanha."); return; }
+
+            const novaCampanha = {
+                titulo: titulo,
+                data: data.split('-').reverse().join('/'), // formata para dd/mm/aaaa se for input date
+                descricao: "",
+                fotos: [], // array de base64
+                custos: [],
+                dataCriacao: new Date().toISOString()
+            };
+
+            try {
+                await addDoc(collection(db, "endomarketing"), novaCampanha);
+                document.getElementById('endoTitulo').value = "";
+                document.getElementById('endoData').value = "";
+            } catch (e) { console.error(e); alert("Erro ao criar campanha."); }
+        };
+
+        window.atualizarDescricaoEndo = async (docId, valor) => {
+            try { await updateDoc(doc(db, "endomarketing", docId), { descricao: valor }); } catch(e) { console.error(e); }
+        };
+
+        window.addFotoEndo = (docId, event) => {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result;
+                const campanha = campanhasEndo.find(c => c.id === docId);
+                if(campanha) {
+                    let novasFotos = [...(campanha.fotos || [])];
+                    novasFotos.push(base64);
+                    try {
+                        await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos });
+                    } catch(err) { console.error(err); alert("Erro ao salvar foto."); }
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.removerFotoEndo = async (docId, fotoIndex) => {
+            if(!confirm("Deseja remover esta foto?")) return;
+            const campanha = campanhasEndo.find(c => c.id === docId);
+            if(campanha) {
+                let novasFotos = [...(campanha.fotos || [])];
+                novasFotos.splice(fotoIndex, 1);
+                await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos });
+            }
+        };
+
+        window.addCustoEndo = async (docId) => {
+            const dataCusto = document.getElementById(`endoCustoData_${docId}`).value;
+            const loja = document.getElementById(`endoCustoLoja_${docId}`).value;
+            const desc = document.getElementById(`endoCustoDesc_${docId}`).value;
+            const qtd = parseFloat(document.getElementById(`endoCustoQtd_${docId}`).value) || 0;
+            const valorUn = parseFloat(document.getElementById(`endoCustoValorUn_${docId}`).value) || 0;
+
+            if(!dataCusto || !desc) { alert("Preencha a Data e a Descrição do custo."); return; }
+
+            const valorTotal = qtd * valorUn;
+
+            const novoCusto = {
+                data: dataCusto.split('-').reverse().join('/'),
+                loja: loja || '-',
+                descricao: desc,
+                quantidade: qtd,
+                valorUn: valorUn,
+                valorTotal: valorTotal
+            };
+
+            const campanha = campanhasEndo.find(c => c.id === docId);
+            if(campanha) {
+                let novosCustos = [...(campanha.custos || [])];
+                novosCustos.push(novoCusto);
+                await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos });
+            }
+        };
+
+        window.removerCustoEndo = async (docId, custoIndex) => {
+            if(!confirm("Remover este item da tabela de custos?")) return;
+            const campanha = campanhasEndo.find(c => c.id === docId);
+            if(campanha) {
+                let novosCustos = [...(campanha.custos || [])];
+                novosCustos.splice(custoIndex, 1);
+                await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos });
+            }
+        };
+
+        window.removerCampanhaEndo = async (docId) => {
+            if(confirm("ATENÇÃO: Deseja excluir permanentemente este mural de campanha inteir? Todos os custos e fotos serão perdidos.")) {
+                await deleteDoc(doc(db, "endomarketing", docId));
+            }
+        };
+
+        window.renderEndomarketing = () => {
+            const container = document.getElementById('endoCardsContainer');
+            if(!container) return;
+            container.innerHTML = "";
+
+            const isBlocked = !isAdmin ? 'disabled' : '';
+
+            campanhasEndo.forEach(camp => {
+                let totalGasto = 0;
+                let custosHtml = "";
+                
+                // Gera a tabela de custos da campanha
+                (camp.custos || []).forEach((c, cIndex) => {
+                    totalGasto += c.valorTotal;
+                    custosHtml += `
+                    <tr>
+                        <td>${c.data}</td>
+                        <td>${c.loja}</td>
+                        <td>${c.descricao}</td>
+                        <td>${c.quantidade}</td>
+                        <td>${formatCurrency(c.valorUn)}</td>
+                        <td><b>${formatCurrency(c.valorTotal)}</b></td>
+                        ${isAdmin ? `<td><button class="btn btn-outline" style="padding:2px 6px; font-size:10px; color:#dc2626; border-color:#dc2626;" onclick="removerCustoEndo('${camp.id}', ${cIndex})"><i class="fa-solid fa-trash"></i></button></td>` : ''}
+                    </tr>
+                    `;
+                });
+
+                // Inputs para adicionar novos gastos na tabela
+                const adminCustoInputs = isAdmin ? `
+                <tr style="background-color: var(--hover-blue);">
+                    <td><input type="date" id="endoCustoData_${camp.id}" class="table-input"></td>
+                    <td><input type="text" id="endoCustoLoja_${camp.id}" class="table-input" placeholder="Loja"></td>
+                    <td><input type="text" id="endoCustoDesc_${camp.id}" class="table-input" placeholder="Descrição"></td>
+                    <td><input type="number" id="endoCustoQtd_${camp.id}" class="table-input" value="1" min="1"></td>
+                    <td><input type="number" id="endoCustoValorUn_${camp.id}" class="table-input" value="0.00" step="0.01"></td>
+                    <td style="color: var(--text-secondary); font-size: 11px; text-align: center;">Automático</td>
+                    <td><button class="btn" style="background-color: var(--endo-color); padding: 4px 8px;" onclick="addCustoEndo('${camp.id}')"><i class="fa-solid fa-plus"></i></button></td>
+                </tr>
+                ` : '';
+
+                // Gera galeria de fotos
+                let fotosHtml = "";
+                (camp.fotos || []).forEach((fBase64, fIndex) => {
+                    fotosHtml += `
+                    <div class="endo-photo-wrap">
+                        <img src="${fBase64}" class="endo-photo" onclick="window.open('${fBase64}', '_blank')" title="Clique para expandir">
+                        ${isAdmin ? `<button class="endo-photo-del" onclick="removerFotoEndo('${camp.id}', ${fIndex})"><i class="fa-solid fa-times"></i></button>` : ''}
+                    </div>
+                    `;
+                });
+
+                const cardHtml = `
+                <div class="endo-card">
+                    <div class="endo-header">
+                        <div>
+                            <h3 style="color: var(--endo-color); font-size: 18px;"><i class="fa-solid fa-bullhorn"></i> ${camp.titulo}</h3>
+                            <span style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-calendar-day"></i> Data da Ação: ${camp.data}</span>
+                        </div>
+                        <div>
+                            ${isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerCampanhaEndo('${camp.id}')"><i class="fa-solid fa-trash"></i> Excluir Campanha</button>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 12px; font-weight: bold; color: var(--text-secondary);">Sobre a Campanha / Informações:</label>
+                        <textarea class="table-input" style="width: 100%; height: 60px; resize: vertical; margin-top: 5px;" placeholder="Digite aqui os detalhes, objetivo e o que ocorreu na campanha..." onchange="atualizarDescricaoEndo('${camp.id}', this.value)" ${isBlocked}>${camp.descricao || ''}</textarea>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 12px; font-weight: bold; color: var(--text-secondary);">Fotos e Registros da Ação:</label>
+                            ${isAdmin ? `
+                            <label for="uploadFoto_${camp.id}" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; cursor: pointer; color: var(--endo-color); border-color: var(--endo-color);">
+                                <i class="fa-solid fa-camera"></i> Adicionar Foto
+                            </label>
+                            <input type="file" id="uploadFoto_${camp.id}" accept="image/*" style="display:none;" onchange="addFotoEndo('${camp.id}', event)">
+                            ` : ''}
+                        </div>
+                        <div class="endo-gallery">
+                            ${fotosHtml || '<span style="font-size: 12px; color: var(--text-secondary); margin-left: 10px;">Nenhuma foto adicionada ainda.</span>'}
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <label style="font-size: 12px; font-weight: bold; color: var(--text-secondary); margin-bottom: 5px; display: block;">Tabela de Custos Associados:</label>
+                        <table style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                            <thead>
+                                <tr>
+                                    <th style="background-color: var(--endo-color);">Data</th>
+                                    <th style="background-color: var(--endo-color);">Loja</th>
+                                    <th style="background-color: var(--endo-color);">Descrição do Gasto</th>
+                                    <th style="background-color: var(--endo-color);">Quantidade</th>
+                                    <th style="background-color: var(--endo-color);">Valor Unit.</th>
+                                    <th style="background-color: var(--endo-color);">Valor Total</th>
+                                    ${isAdmin ? `<th style="background-color: var(--endo-color);">Ação</th>` : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${custosHtml}
+                                ${adminCustoInputs}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="endo-total-banner">
+                        <span style="font-size: 14px; font-weight: bold; color: var(--primary-blue);"><i class="fa-solid fa-money-bill-wave"></i> TOTAL GASTO NESTA CAMPANHA:</span>
+                        <span style="font-size: 20px; font-weight: bold; color: var(--endo-color);">${formatCurrency(totalGasto)}</span>
+                    </div>
+                </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+            
+            if(container.innerHTML === "") {
+                container.innerHTML = "<p style='font-size:13px; color:var(--text-secondary); padding: 20px; text-align: center; border: 1px dashed var(--border-color); border-radius: 8px;'>Nenhum mural de campanha cadastrado no momento.</p>";
+            }
+        }
+
+        // ==========================================
+        // CÓDIGO DA ABA DE MANUTENÇÃO (MANTIDO)
+        // ==========================================
+        
         function gerarPlacasVazias() {
             let placas = [];
             for(let i=0; i<5; i++){
@@ -759,211 +1022,94 @@
         window.addPedidoManutencao = async () => {
             const titulo = document.getElementById('manutTitulo').value;
             const local = document.getElementById('manutLocal').value;
-            
             if(!titulo) { alert("Informe pelo menos o Título."); return; }
-
             const novoPedido = {
-                titulo: titulo,
-                local: local,
-                situacao: "EM ABERTO", // EM ABERTO, APROVADA, NÃO APROVADA
-                questionamento: "",
-                aprovador: "",
-                dataCriacao: new Date().toLocaleDateString('pt-BR'),
-                placaAprovadaIndex: null, // Novo campo para rastrear qual placa venceu
-                placas: gerarPlacasVazias()
+                titulo: titulo, local: local, situacao: "EM ABERTO", questionamento: "", aprovador: "",
+                dataCriacao: new Date().toLocaleDateString('pt-BR'), placaAprovadaIndex: null, placas: gerarPlacasVazias()
             };
-
             try {
                 await addDoc(collection(db, "manutencao"), novoPedido);
-                document.getElementById('manutTitulo').value = "";
-                document.getElementById('manutLocal').value = "";
+                document.getElementById('manutTitulo').value = ""; document.getElementById('manutLocal').value = "";
             } catch (e) { console.error(e); alert("Erro ao criar."); }
         };
 
-        // NOVA FUNÇÃO: DOWNLOAD DE MODELO DE PLANILHA
         window.baixarModeloManutencao = () => {
-            const modelo = [
-                { "TÍTULO": "Ex: Conserto Ar Condicionado Sala 2", "SETOR": "Recepção" },
-                { "TÍTULO": "Ex: Reparo de Computadores", "SETOR": "TI" }
-            ];
-            const ws = XLSX.utils.json_to_sheet(modelo);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Modelo_Manutencao");
-            XLSX.writeFile(wb, "Modelo_Upload_Manutencao.xlsx");
+            const modelo = [ { "TÍTULO": "Ex: Conserto Ar Condicionado Sala 2", "SETOR": "Recepção" }, { "TÍTULO": "Ex: Reparo de Computadores", "SETOR": "TI" } ];
+            const ws = XLSX.utils.json_to_sheet(modelo); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Modelo_Manutencao"); XLSX.writeFile(wb, "Modelo_Upload_Manutencao.xlsx");
         };
 
-        // NOVA FUNÇÃO: UPLOAD DE PLANILHA DE MANUTENÇÃO
         window.handleFileUploadManutencao = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
+            const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-
+                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]]; const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
                 if (jsonData.length > 0) {
                     const novosPedidos = jsonData.map(row => {
-                        const getVal = (possibleNames) => {
-                            const foundKey = Object.keys(row).find(k => possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase()));
-                            return foundKey ? row[foundKey] : '';
-                        };
-
+                        const getVal = (possibleNames) => { const foundKey = Object.keys(row).find(k => possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase())); return foundKey ? row[foundKey] : ''; };
                         let titulo = getVal(['TÍTULO', 'TITULO', 'DESCRIÇÃO', 'DESCRICAO', 'SERVIÇO', 'SERVICO']) || 'Manutenção Diversa';
                         let local = getVal(['LOCAL', 'SETOR', 'DEPARTAMENTO']) || 'Não informado';
-
-                        return {
-                            titulo: titulo,
-                            local: local,
-                            situacao: "EM ABERTO",
-                            questionamento: "",
-                            aprovador: "",
-                            dataCriacao: new Date().toLocaleDateString('pt-BR'),
-                            placaAprovadaIndex: null,
-                            placas: gerarPlacasVazias()
-                        };
+                        return { titulo: titulo, local: local, situacao: "EM ABERTO", questionamento: "", aprovador: "", dataCriacao: new Date().toLocaleDateString('pt-BR'), placaAprovadaIndex: null, placas: gerarPlacasVazias() };
                     });
-
-                    const status = document.getElementById('statusFirebase');
-                    status.innerText = "Sincronizando Manutenções...";
-                    status.style.color = "orange";
-
+                    document.getElementById('statusFirebase').innerText = "Sincronizando Manutenções..."; document.getElementById('statusFirebase').style.color = "orange";
                     try {
-                        for (let i = 0; i < novosPedidos.length; i++) {
-                            await addDoc(collection(db, "manutencao"), novosPedidos[i]);
-                        }
-                        
-                        status.innerText = "Online (Sincronizado)";
-                        status.style.color = "green";
-                        
-                        document.getElementById('fileInputManutencao').value = "";
-                        alert('Planilha de Manutenção carregada e sincronizada com sucesso!');
-                    } catch (error) {
-                        console.error("Erro no Firebase:", error);
-                        alert("Erro ao salvar manutenções. Verifique suas permissões.");
-                        status.innerText = "Erro ao salvar";
-                        status.style.color = "red";
-                    }
+                        for (let i = 0; i < novosPedidos.length; i++) await addDoc(collection(db, "manutencao"), novosPedidos[i]);
+                        document.getElementById('statusFirebase').innerText = "Online (Sincronizado)"; document.getElementById('statusFirebase').style.color = "green";
+                        document.getElementById('fileInputManutencao').value = ""; alert('Planilha carregada com sucesso!');
+                    } catch (error) { console.error("Erro no Firebase:", error); alert("Erro ao salvar."); }
                 }
-            };
-            reader.readAsArrayBuffer(file);
+            }; reader.readAsArrayBuffer(file);
         };
 
-        // Atualizar campos GERAIS de uma placa específica
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
-            if(pedido) {
-                let novasPlacas = [...pedido.placas];
-                novasPlacas[placaIndex][campo] = valor;
-                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
-            }
+            if(pedido) { let novasPlacas = [...pedido.placas]; novasPlacas[placaIndex][campo] = valor; await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); }
         };
 
-        // NOVA FUNÇÃO: ATUALIZAR LINHA ESPECÍFICA DENTRO DA PLACA (Para suportar as 5 linhas)
         window.atualizarLinhaPlacaManutencao = async (docId, placaIndex, linhaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
                 let novasPlacas = [...pedido.placas];
-                
-                // Regra de retrocompatibilidade (se o dado for muito antigo e não tiver 'linhas')
-                if (!novasPlacas[placaIndex].linhas) {
-                    novasPlacas[placaIndex].linhas = [
-                        { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" }
-                    ];
-                }
-
+                if (!novasPlacas[placaIndex].linhas) { novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" } ]; }
                 novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor;
                 await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
             }
         };
 
-        // NOVA FUNÇÃO: DIRETORIA APROVAR UMA PLACA ESPECÍFICA
         window.aprovarCotacaoManutencao = async (docId, placaIndex) => {
-            if(!window.nomeUsuarioRestrito) {
-                alert("Identifique-se primeiro recarregando a aba Manutenção.");
-                return;
-            }
+            if(!window.nomeUsuarioRestrito) { alert("Identifique-se primeiro recarregando a aba Manutenção."); return; }
             if(confirm("Confirma a aprovação exclusiva desta cotação?")) {
-                try {
-                    await updateDoc(doc(db, "manutencao", docId), {
-                        situacao: "APROVADA",
-                        aprovador: window.nomeUsuarioRestrito,
-                        placaAprovadaIndex: placaIndex
-                    });
-                } catch(e) {
-                    console.error("Erro ao aprovar cotação específica:", e);
-                }
+                try { await updateDoc(doc(db, "manutencao", docId), { situacao: "APROVADA", aprovador: window.nomeUsuarioRestrito, placaAprovadaIndex: placaIndex }); } catch(e) { console.error(e); }
             }
         };
 
-        // Alterar Status geral pela Diretoria (Preenche aprovador auto)
         window.alterarStatusManut = async (docId, novoStatus) => {
             let updateData = { situacao: novoStatus };
-            if (window.nomeUsuarioRestrito) {
-                updateData.aprovador = window.nomeUsuarioRestrito;
-            }
-            // Se mudou pra algo diferente de 'APROVADA', remove o destaque da placa
-            if (novoStatus !== "APROVADA") {
-                updateData.placaAprovadaIndex = null;
-            }
+            if (window.nomeUsuarioRestrito) updateData.aprovador = window.nomeUsuarioRestrito;
+            if (novoStatus !== "APROVADA") updateData.placaAprovadaIndex = null;
             await updateDoc(doc(db, "manutencao", docId), updateData);
         };
 
-        // Alterar questionamento
-        window.atualizarQuestionamentoManut = async (docId, valor) => {
-            await updateDoc(doc(db, "manutencao", docId), { questionamento: valor });
-        };
+        window.atualizarQuestionamentoManut = async (docId, valor) => { await updateDoc(doc(db, "manutencao", docId), { questionamento: valor }); };
 
-        window.removerManutencao = async (docId) => {
-            if(confirm("Deseja realmente excluir este pedido de manutenção?")) {
-                await deleteDoc(doc(db, "manutencao", docId));
-            }
-        };
+        window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) await deleteDoc(doc(db, "manutencao", docId)); };
 
         window.renderTelasManutencao = () => {
-            const contAberto = document.getElementById('manutencaoAbertoContainer');
-            const contHist = document.getElementById('manutencaoHistoricoContainer');
-            if(!contAberto || !contHist) return;
-            
-            contAberto.innerHTML = "";
-            contHist.innerHTML = "";
-
+            const contAberto = document.getElementById('manutencaoAbertoContainer'); const contHist = document.getElementById('manutencaoHistoricoContainer');
+            if(!contAberto || !contHist) return; contAberto.innerHTML = ""; contHist.innerHTML = "";
             const isBlocked = !window.nomeUsuarioRestrito ? 'disabled' : '';
 
             pedidosManutencao.forEach(item => {
                 const isAberto = (item.situacao === 'EM ABERTO' || item.situacao === 'EM ANALISE');
-                
                 let placasHtml = "";
                 item.placas.forEach((placa, index) => {
                     const isPlacaAprovada = item.placaAprovadaIndex === index;
-                    
-                    // Garante que a placa tenha o array de 5 linhas (para compatibilidade com dados antigos)
-                    let linhasData = placa.linhas || [
-                        {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""},
-                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
-                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
-                        {item: "", qtde: "", valorUn: "", valorTotal: ""},
-                        {item: "", qtde: "", valorUn: "", valorTotal: ""}
-                    ];
-
+                    let linhasData = placa.linhas || [ {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""} ];
                     let linhasHtml = "";
                     for(let r=0; r<5; r++){
-                        linhasHtml += `
-                        <tr>
-                            <td style="text-align: left;"><input type="text" value="${linhasData[r].item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;"></td>
-                            <td><input type="text" value="${linhasData[r].qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${linhasData[r].valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${linhasData[r].valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked}></td>
-                        </tr>
-                        `;
+                        linhasHtml += `<tr><td style="text-align: left;"><input type="text" value="${linhasData[r].item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;"></td><td><input type="text" value="${linhasData[r].qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td><td><input type="text" value="${linhasData[r].valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td><td><input type="text" value="${linhasData[r].valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked}></td></tr>`;
                     }
-                    
                     placasHtml += `
                     <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
                         ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
@@ -972,76 +1118,36 @@
                         <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
                         <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
                         <tr><td colspan="4"><a href="${placa.site && !placa.site.startsWith('http') ? 'https://'+placa.site : placa.site || '#'}" target="_blank" style="color:var(--secondary-blue);">Site:</a> <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
-                        
-                        <!-- LARGURAS DAS COLUNAS AJUSTADAS AQUI -->
-                        <tr>
-                            <th class="teal-bg" style="font-size:10px; width: 55%; text-align: left; padding-left: 8px;">Itens</th>
-                            <th class="teal-bg" style="font-size:10px; width: 15%;">Qtde</th>
-                            <th class="teal-bg" style="font-size:10px; width: 15%;">Valor Unit.</th>
-                            <th class="teal-bg" style="font-size:10px; width: 15%;">Valor Total</th>
-                        </tr>
+                        <tr><th class="teal-bg" style="font-size:10px; width: 55%; text-align: left; padding-left: 8px;">Itens</th><th class="teal-bg" style="font-size:10px; width: 15%;">Qtde</th><th class="teal-bg" style="font-size:10px; width: 15%;">Valor Unit.</th><th class="teal-bg" style="font-size:10px; width: 15%;">Valor Total</th></tr>
                         ${linhasHtml}
                         <tr><td colspan="4">&nbsp;</td></tr>
                         <tr><td colspan="2"><b>Valor total geral</b></td><td colspan="2">R$ <input type="text" style="width:60%; font-weight:bold;" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></td></tr>
-                        
                         <tr><th colspan="4" class="teal-bg">Prazo: <input type="text" style="width:70%; color:white;" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Emissão de NF: <input type="text" style="width:60%; color:white;" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Forma Pgto: <input type="text" style="width:60%; color:white;" value="${placa.pagamento || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'pagamento', this.value)" ${isBlocked}></th></tr>
-                        
-                        ${!isPlacaAprovada ? `
-                        <tr><td colspan="4" style="padding: 10px;">
-                            <button class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}>
-                                <i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação
-                            </button>
-                        </td></tr>` : ''}
+                        ${!isPlacaAprovada ? `<tr><td colspan="4" style="padding: 10px;"><button class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação</button></td></tr>` : ''}
                     </table>
                     `;
                 });
-
                 const htmlItem = `
                 <div class="manutencao-item">
                     <div class="manutencao-header">
-                        <div>
-                            <h3 style="color: var(--primary-blue); font-size: 15px;">${item.titulo}</h3>
-                            <span style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> Local: ${item.local} | Criado em: ${item.dataCriacao}</span>
-                        </div>
-                        <div>
-                            ${isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir</button>` : ''}
-                        </div>
+                        <div><h3 style="color: var(--primary-blue); font-size: 15px;">${item.titulo}</h3><span style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> Local: ${item.local} | Criado em: ${item.dataCriacao}</span></div>
+                        <div>${isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir</button>` : ''}</div>
                     </div>
-                    
-                    <div class="placas-wrapper">
-                        ${placasHtml}
-                    </div>
-
+                    <div class="placas-wrapper">${placasHtml}</div>
                     <div class="diretoria-controls">
                         <h4 style="font-size: 13px; color: var(--primary-blue); margin-bottom: 10px;"><i class="fa-solid fa-gavel"></i> Avaliação da Diretoria</h4>
                         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Decisão / Status Geral</label><br>
-                                <select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusManut('${item.id}', this.value)" ${isBlocked} style="margin-top:4px; width: 100%;">
-                                    <option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO (Aguardando)</option>
-                                    <option value="APROVADA" ${item.situacao === 'APROVADA' ? 'selected' : ''}>APROVADA</option>
-                                    <option value="NÃO APROVADA" ${item.situacao === 'NÃO APROVADA' ? 'selected' : ''}>NÃO APROVADA</option>
-                                </select>
-                            </div>
-                            <div style="flex: 2; min-width: 250px;">
-                                <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Questionamentos / Observações</label><br>
-                                <input type="text" class="table-input" style="margin-top:4px;" value="${item.questionamento || ''}" placeholder="Digite aqui alguma dúvida sobre as cotações..." onchange="atualizarQuestionamentoManut('${item.id}', this.value)" ${isBlocked}>
-                            </div>
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Alterado por / Aprovador</label><br>
-                                <input type="text" class="table-input" style="margin-top:4px; background: var(--border-color); font-weight:bold; color:var(--primary-blue);" value="${item.aprovador || ''}" readonly>
-                            </div>
+                            <div style="flex: 1; min-width: 200px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Decisão / Status Geral</label><br><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusManut('${item.id}', this.value)" ${isBlocked} style="margin-top:4px; width: 100%;"><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO (Aguardando)</option><option value="APROVADA" ${item.situacao === 'APROVADA' ? 'selected' : ''}>APROVADA</option><option value="NÃO APROVADA" ${item.situacao === 'NÃO APROVADA' ? 'selected' : ''}>NÃO APROVADA</option></select></div>
+                            <div style="flex: 2; min-width: 250px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Questionamentos / Observações</label><br><input type="text" class="table-input" style="margin-top:4px;" value="${item.questionamento || ''}" placeholder="Digite aqui alguma dúvida..." onchange="atualizarQuestionamentoManut('${item.id}', this.value)" ${isBlocked}></div>
+                            <div style="flex: 1; min-width: 200px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Alterado por / Aprovador</label><br><input type="text" class="table-input" style="margin-top:4px; background: var(--border-color); font-weight:bold; color:var(--primary-blue);" value="${item.aprovador || ''}" readonly></div>
                         </div>
                     </div>
                 </div>
                 `;
-
-                if(isAberto) contAberto.innerHTML += htmlItem;
-                else contHist.innerHTML += htmlItem;
+                if(isAberto) contAberto.innerHTML += htmlItem; else contHist.innerHTML += htmlItem;
             });
-            
             if(contAberto.innerHTML === "") contAberto.innerHTML = "<p style='font-size:12px; color:var(--text-secondary);'>Nenhum pedido de manutenção em aberto.</p>";
             if(contHist.innerHTML === "") contHist.innerHTML = "<p style='font-size:12px; color:var(--text-secondary);'>Nenhum pedido no histórico.</p>";
         }
@@ -1159,7 +1265,7 @@
                 });
             }
         }
-
+        
         // ==========================================
         // ABA DE COMPRAS (FUNÇÕES MANTIDAS)
         // ==========================================
