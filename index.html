@@ -17,28 +17,30 @@
             --card-bg: #ffffff;
             --text-color: #2c3e50;
             --text-secondary: #6c757d;
-            --primary-blue: #1e3a8a;
-            --secondary-blue: #3b82f6;
-            --accent-blue: #60a5fa;
-            --hover-blue: #eff6ff;
+            /* NOVA COR PRINCIPAL DA MARCA BRMOBILITY */
+            --primary-blue: #0a3746; 
+            --secondary-blue: #14566d;
+            --accent-blue: #2a8aab;
+            --hover-blue: #e8f4f8;
             --border-color: #e2e8f0;
-            --table-header: #0f172a;
+            --table-header: #072a36;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --teal-color: #008B8B;
             --endo-color: #8b5cf6;
         }
 
         [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #05161c;
+            --card-bg: #0d2833;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
-            --primary-blue: #3b82f6;
-            --secondary-blue: #60a5fa;
-            --accent-blue: #93c5fd;
-            --hover-blue: #334155;
-            --border-color: #334155;
-            --table-header: #020617;
+            /* NOVA COR PRINCIPAL ADAPTADA PARA DARK MODE */
+            --primary-blue: #1e708a; 
+            --secondary-blue: #2a8aab;
+            --accent-blue: #52b3d4;
+            --hover-blue: #0f3645;
+            --border-color: #174252;
+            --table-header: #031014;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
             --teal-color: #006666;
             --endo-color: #7c3aed;
@@ -348,8 +350,8 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
-            <i class="fa-solid fa-chart-pie" style="font-size: 40px; color: var(--primary-blue); margin-bottom: 15px;"></i>
-            <h2>Dashboard BRMobility</h2>
+            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
+            <img src="image_718704.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
                 <button class="initial-btn btn-admin" onclick="abrirLogin()">
@@ -364,7 +366,11 @@
 
     <header>
         <div class="title-container">
-            <h1><i class="fa-solid fa-chart-pie"></i> Dashboard Interativo de Custos Administrativos</h1>
+            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
+            <h1 style="display: flex; align-items: center; gap: 15px;">
+                <img src="image_718704.png" alt="Logo BRMobility" style="max-height: 40px;">
+                Dashboard Interativo de Custos Administrativos
+            </h1>
             <h2>Visão Executiva Diretoria • BRMobility</h2>
         </div>
 
@@ -427,8 +433,6 @@
         
         <button class="tab-btn highlight" onclick="verificarAcessoRestrito('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
         <button class="tab-btn highlight-teal" onclick="verificarAcessoRestrito('tab-manutencao', this)"><i class="fa-solid fa-screwdriver-wrench"></i> MANUTENÇÃO</button>
-        
-        <!-- NOVA ABA DE ENDOMARKETING -->
         <button class="tab-btn highlight-purple" onclick="switchTab('tab-endomarketing', this)"><i class="fa-solid fa-bullhorn"></i> ENDOMARKETING</button>
     </div>
 
@@ -559,7 +563,7 @@
         </div>
     </div>
 
-    <!-- TAB 8: NOVA ABA ENDOMARKETING -->
+    <!-- TAB 8: ABA ENDOMARKETING -->
     <div id="tab-endomarketing" class="tab-content">
         <div class="card">
             <div class="card-header">
@@ -604,7 +608,7 @@
         let rawData = [];
         let pedidosCompras = [];
         let pedidosManutencao = [];
-        let campanhasEndo = []; // Nova variável para armazenar campanhas
+        let campanhasEndo = []; 
         let isAdmin = false; 
         let selectedFilters = { Grupo: null, Categoria: null, Fornecedor: null, Frequencia: null };
         let currentPeriod = 'ALL'; 
@@ -638,7 +642,6 @@
             
             window.nomeUsuarioRestrito = nome;
             
-            // Auto-preenche no form de compras se existir
             const inputAprov = document.getElementById('compAprov');
             if(inputAprov){
                 inputAprov.value = nome;
@@ -669,7 +672,6 @@
                 document.getElementById('formComprasContainer').style.display = 'block';
                 document.getElementById('formManutencaoContainer').style.display = 'block';
                 
-                // Exibe formulário do Endomarketing
                 const formEndo = document.getElementById('formEndoContainer');
                 if(formEndo) formEndo.style.display = 'block';
 
@@ -690,7 +692,6 @@
                 document.getElementById('formComprasContainer').style.display = 'none';
                 document.getElementById('formManutencaoContainer').style.display = 'none';
                 
-                // Oculta formulário do Endomarketing
                 const formEndo = document.getElementById('formEndoContainer');
                 if(formEndo) formEndo.style.display = 'none';
 
@@ -699,7 +700,7 @@
             }
             renderTabelaCompras();
             renderTelasManutencao();
-            renderEndomarketing(); // Re-renderiza abas para mostrar/esconder inputs
+            renderEndomarketing(); 
         });
 
         // LISTENERS FIREBASE
@@ -726,12 +727,9 @@
             renderTelasManutencao();
         });
 
-        // NOVO LISTENER: ENDOMARKETING
         onSnapshot(collection(db, "endomarketing"), (snapshot) => {
             const fetchedData = [];
             snapshot.forEach((docSnap) => fetchedData.push({ id: docSnap.id, ...docSnap.data() }));
-            
-            // Ordenar por data de criação (mais recente primeiro)
             fetchedData.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
             campanhasEndo = fetchedData;
             renderEndomarketing();
@@ -780,7 +778,6 @@
         // ==========================================
         // CÓDIGO DA NOVA ABA DE ENDOMARKETING
         // ==========================================
-        
         window.addCampanhaEndo = async () => {
             const titulo = document.getElementById('endoTitulo').value;
             const data = document.getElementById('endoData').value;
@@ -789,9 +786,9 @@
 
             const novaCampanha = {
                 titulo: titulo,
-                data: data.split('-').reverse().join('/'), // formata para dd/mm/aaaa se for input date
+                data: data.split('-').reverse().join('/'), 
                 descricao: "",
-                fotos: [], // array de base64
+                fotos: [], 
                 custos: [],
                 dataCriacao: new Date().toISOString()
             };
@@ -874,7 +871,7 @@
         };
 
         window.removerCampanhaEndo = async (docId) => {
-            if(confirm("ATENÇÃO: Deseja excluir permanentemente este mural de campanha inteir? Todos os custos e fotos serão perdidos.")) {
+            if(confirm("ATENÇÃO: Deseja excluir permanentemente este mural de campanha inteiro? Todos os custos e fotos serão perdidos.")) {
                 await deleteDoc(doc(db, "endomarketing", docId));
             }
         };
@@ -890,7 +887,6 @@
                 let totalGasto = 0;
                 let custosHtml = "";
                 
-                // Gera a tabela de custos da campanha
                 (camp.custos || []).forEach((c, cIndex) => {
                     totalGasto += c.valorTotal;
                     custosHtml += `
@@ -901,12 +897,11 @@
                         <td>${c.quantidade}</td>
                         <td>${formatCurrency(c.valorUn)}</td>
                         <td><b>${formatCurrency(c.valorTotal)}</b></td>
-                        ${isAdmin ? `<td><button class="btn btn-outline" style="padding:2px 6px; font-size:10px; color:#dc2626; border-color:#dc2626;" onclick="removerCustoEndo('${camp.id}', ${cIndex})"><i class="fa-solid fa-trash"></i></button></td>` : ''}
+                        ${isAdmin ? `<td><button class="btn btn-outline" style="padding:2px 6px; font-size:10px; color:#dc2626; border-color:#dc2626;" onclick="removerCustoEndo('${camp.id}',${cIndex})"><i class="fa-solid fa-trash"></i></button></td>` : ''}
                     </tr>
                     `;
                 });
 
-                // Inputs para adicionar novos gastos na tabela
                 const adminCustoInputs = isAdmin ? `
                 <tr style="background-color: var(--hover-blue);">
                     <td><input type="date" id="endoCustoData_${camp.id}" class="table-input"></td>
@@ -919,13 +914,12 @@
                 </tr>
                 ` : '';
 
-                // Gera galeria de fotos
                 let fotosHtml = "";
                 (camp.fotos || []).forEach((fBase64, fIndex) => {
                     fotosHtml += `
                     <div class="endo-photo-wrap">
                         <img src="${fBase64}" class="endo-photo" onclick="window.open('${fBase64}', '_blank')" title="Clique para expandir">
-                        ${isAdmin ? `<button class="endo-photo-del" onclick="removerFotoEndo('${camp.id}', ${fIndex})"><i class="fa-solid fa-times"></i></button>` : ''}
+                        ${isAdmin ? `<button class="endo-photo-del" onclick="removerFotoEndo('${camp.id}',${fIndex})"><i class="fa-solid fa-times"></i></button>` : ''}
                     </div>
                     `;
                 });
@@ -1265,38 +1259,6 @@
                 });
             }
         }
-        
-        // ==========================================
-        // ABA DE COMPRAS (FUNÇÕES MANTIDAS)
-        // ==========================================
-        function getStatusClass(status) {
-            switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; default: return 'status-aberto'; }
-        }
-        window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); } }
-        window.atualizarCampoCompra = async (docId, campo, valor) => { try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } catch(e) { console.error(e); } }
-        window.removerPedidoCompra = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "pedidos_compras", docId)); } catch(e) { console.error(e); } } }
-        window.renderTabelaCompras = () => {
-            const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
-            const disabledAttr = isAdmin || window.nomeUsuarioRestrito ? '' : 'disabled="disabled"';
-            pedidosCompras.forEach((item) => {
-                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
-                const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
-                let linkUrl = item.link ? item.link.trim() : ''; if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
-                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra('${item.id}', this.value)" ${disabledAttr}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}></td><td>${deleteBtnHtml}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
-        window.addPedidoCompra = async () => {
-            const prod = document.getElementById('compProd').value; if(!prod) { alert('Informe produto.'); return; }
-            const novoItem = { situacao: document.getElementById('compSit').value, produto: prod, qtd: parseFloat(document.getElementById('compQtd').value) || 0, loja: document.getElementById('compLoja').value || '-', departamento: document.getElementById('compDep').value || '-', valorUn: parseFloat(document.getElementById('compValUn').value) || 0, desconto: parseFloat(document.getElementById('compDesc').value) || 0, frete: parseFloat(document.getElementById('compFrete').value) || 0, imposto: parseFloat(document.getElementById('compImp').value) || 0, link: document.getElementById('compLink').value || '', utilidade: document.getElementById('compUtil').value || '-', obs: document.getElementById('compObs').value || '', aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' };
-            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar."); }
-        }
-
-        window.clearTabSelection = (fieldKey) => { selectedFilters[fieldKey] = null; renderDashboard(); }
-        window.applyFilters = () => { renderDashboard(); }
-        window.exportToExcel = (tableId, filename) => { const table = document.getElementById(tableId); const wb = XLSX.utils.table_to_book(table, { sheet: "Relatório" }); XLSX.writeFile(wb, `${filename}.xlsx`); }
     </script>
 </body>
 </html>
