@@ -297,6 +297,7 @@
         .status-aprovado { background-color: #d1fae5; color: #059669; border: 1px solid #10b981; }
         .status-nao-aprovado { background-color: #fee2e2; color: #dc2626; border: 1px solid #ef4444; }
         .status-analise { background-color: #e0f2fe; color: #0284c7; border: 1px solid #38bdf8; }
+        .status-concluido { background-color: #e5e7eb; color: #4b5563; border: 1px solid #9ca3af; }
 
         .table-input { width: 100%; min-width: 120px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--card-bg); color: var(--text-color); font-size: 12px; }
         input[type="file"] { display: none; }
@@ -327,6 +328,20 @@
         }
         .close-photo-modal:hover { color: #fca5a5; }
 
+        /* ESTILOS ACORDEÃO HISTÓRICO DE COMPRAS */
+        .accordion-header {
+            background-color: var(--hover-blue); padding: 15px; border: 1px solid var(--border-color);
+            border-radius: 8px; cursor: pointer; font-weight: bold; color: var(--primary-blue);
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
+            transition: 0.3s;
+        }
+        .accordion-header:hover { background-color: #d1e2e8; }
+        .accordion-body {
+            display: none; padding: 15px 0; margin-bottom: 15px;
+            border-left: 2px solid var(--primary-blue); padding-left: 15px;
+        }
+        .accordion-body.open { display: block; }
+        
         /* ================== ESTILOS ESPECÍFICOS DA ABA MANUTENÇÃO ================== */
         .manutencao-item { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; padding: 20px; background: var(--card-bg); box-shadow: var(--shadow); }
         .manutencao-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--hover-blue); padding-bottom: 15px; margin-bottom: 20px; }
@@ -440,7 +455,6 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
-            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
             <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
@@ -456,7 +470,6 @@
 
     <header>
         <div class="title-container">
-            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
             <h1 style="display: flex; align-items: center; gap: 15px;">
                 <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-height: 40px;">
                 Dashboard Interativo de Custos Administrativos
@@ -572,9 +585,10 @@
 
     <!-- TAB 6: PEDIDO DE COMPRAS -->
     <div id="tab-compras" class="tab-content">
-        <div class="card">
+        <!-- BLOCO 1: PEDIDOS EM ABERTO/ATIVOS -->
+        <div class="card" id="comprasAbertasContainer">
             <div class="card-header">
-                <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras</div>
+                <div class="card-title"><i class="fa-solid fa-cart-flatbed"></i> Solicitação e Gestão de Pedidos de Compras (Em Aberto)</div>
                 <div style="display: flex; gap: 10px;">
                     <label for="fileInputCompras" id="labelUploadCompras" class="btn btn-outline" style="cursor: pointer; display: none;">
                         <i class="fa-solid fa-file-import"></i> Carregar Planilha de Compras
@@ -605,11 +619,28 @@
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
             </div>
 
+            <!-- NOVO BOTÃO: FECHAR LOTE (APARECE APENAS SE IDENTIFICADO) -->
+            <div id="btnFecharLoteContainer" style="display: none; margin-bottom: 15px;">
+                <button class="btn" style="background-color: #3b82f6; width: 100%; justify-content: center; font-size: 14px;" onclick="concluirLoteComprasAprovadas()">
+                    <i class="fa-solid fa-box-archive"></i> Concluir / Arquivar Lote (Itens Aprovados)
+                </button>
+            </div>
+
             <div class="table-container">
                 <table id="tableComprasData">
                     <thead><tr><th>SITUAÇÃO</th><th>PRODUTO</th><th>QUANTIDADE</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VALOR UN.</th><th>VALOR TOTAL</th><th>DESCONTO</th><th>FRETE</th><th>IMPOSTO</th><th>TOTAL GERAL</th><th>LINK</th><th>UTILIDADE</th><th>OBSERVAÇÕES</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
                     <tbody></tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- BLOCO 2: HISTÓRICO DE PEDIDOS CONCLUÍDOS POR MÊS (SANFONA) -->
+        <div class="card" id="comprasHistoricoContainer">
+            <div class="card-header">
+                <div class="card-title" style="color: var(--text-secondary);"><i class="fa-solid fa-folder-closed"></i> Histórico de Compras Concluídas</div>
+            </div>
+            <div id="comprasAccordionArea">
+                <!-- Os meses fechados vão aparecer aqui -->
             </div>
         </div>
     </div>
@@ -679,7 +710,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDRXf4atZDlQqozLXbSE4OZWwRIJV5jasY",
@@ -866,10 +897,10 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE COMPRAS (RESTAURADO)
+        // CÓDIGO DA ABA DE COMPRAS (ATUALIZADO COM LOTE, ACORDEÃO E LINKS FUNCIONAIS)
         // ==========================================
         function getStatusClass(status) {
-            switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; default: return 'status-aberto'; }
+            switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; case 'CONCLUÍDO': return 'status-concluido'; default: return 'status-aberto'; }
         }
         
         window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); } }
@@ -934,18 +965,145 @@
             reader.readAsArrayBuffer(file);
         };
 
+        // FUNÇÃO: CONCLUIR LOTE
+        window.concluirLoteComprasAprovadas = async () => {
+            const itensAprovados = pedidosCompras.filter(item => item.situacao === 'APROVADO');
+            if (itensAprovados.length === 0) {
+                alert("Não há nenhum item com status 'APROVADO' na tabela para ser concluído e arquivado.");
+                return;
+            }
+            if (!confirm(`Deseja realmente concluir e arquivar os ${itensAprovados.length} itens APROVADOS? Eles serão movidos para o histórico.`)) {
+                return;
+            }
+
+            const dataAtual = new Date();
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const mesAnoLabel = `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`;
+
+            try {
+                const batch = writeBatch(db);
+                itensAprovados.forEach(item => {
+                    const itemRef = doc(db, "pedidos_compras", item.id);
+                    batch.update(itemRef, { 
+                        situacao: "CONCLUÍDO", 
+                        mesConclusao: mesAnoLabel,
+                        dataConclusaoTimestamp: dataAtual.getTime()
+                    });
+                });
+                await batch.commit();
+                alert("Lote concluído e arquivado com sucesso!");
+            } catch (error) {
+                console.error("Erro ao concluir lote: ", error);
+                alert("Ocorreu um erro ao arquivar o lote.");
+            }
+        };
+
+        // FUNÇÃO DE TOGGLE PARA O ACORDEÃO
+        window.toggleAccordion = (id) => {
+            const body = document.getElementById(id);
+            if (body.classList.contains('open')) {
+                body.classList.remove('open');
+            } else {
+                body.classList.add('open');
+            }
+        };
+
         window.renderTabelaCompras = () => {
             const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
+            const accordionArea = document.getElementById('comprasAccordionArea'); if(accordionArea) accordionArea.innerHTML = '';
+            
             const disabledAttr = isAdmin || window.nomeUsuarioRestrito ? '' : 'disabled="disabled"';
-            pedidosCompras.forEach((item) => {
+            
+            const btnContainer = document.getElementById('btnFecharLoteContainer');
+            if (btnContainer) {
+                btnContainer.style.display = (window.nomeUsuarioRestrito || isAdmin) ? 'flex' : 'none';
+            }
+
+            const pedidosAtivos = pedidosCompras.filter(item => item.situacao !== 'CONCLUÍDO');
+            const pedidosConcluidos = pedidosCompras.filter(item => item.situacao === 'CONCLUÍDO');
+
+            // 1. RENDERIZAR TABELA PRINCIPAL (ATIVOS)
+            pedidosAtivos.forEach((item) => {
                 const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
                 const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
-                let linkUrl = item.link ? item.link.trim() : ''; if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
-                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-';
+                
+                // Correção do Link Interativo
+                let linkUrl = item.link ? item.link.trim() : ''; 
+                if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
+                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-globe"></i> Link</a>` : '-';
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra('${item.id}', this.value)" ${disabledAttr}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}></td><td>${deleteBtnHtml}</td>`;
                 tbody.appendChild(tr);
             });
+
+            // 2. RENDERIZAR HISTÓRICO (ACORDEÃO AGRUPADO)
+            if (accordionArea) {
+                if (pedidosConcluidos.length === 0) {
+                    accordionArea.innerHTML = "<p style='font-size:12px; color:var(--text-secondary); text-align:center;'>Nenhum histórico de compra concluída encontrado.</p>";
+                    return;
+                }
+
+                // Agrupar por mesConclusao
+                const gruposMes = {};
+                pedidosConcluidos.forEach(item => {
+                    const mes = item.mesConclusao || 'Anteriores';
+                    if(!gruposMes[mes]) gruposMes[mes] = [];
+                    gruposMes[mes].push(item);
+                });
+
+                // Ordenar chaves para os mais recentes primeiro
+                const sortedMeses = Object.keys(gruposMes).sort((a,b) => {
+                    if (a === 'Anteriores') return 1; if (b === 'Anteriores') return -1;
+                    return b.localeCompare(a); 
+                });
+
+                let accordionHTML = "";
+                sortedMeses.forEach((mes, mIndex) => {
+                    const itensMes = gruposMes[mes];
+                    const idBody = `accBody_${mIndex}`;
+                    
+                    let somaMes = 0;
+                    let tableRows = "";
+                    itensMes.forEach(item => {
+                        const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
+                        somaMes += totalGeral;
+                        const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:2px 6px; font-size:10px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
+                        
+                        // Correção do Link Interativo no Histórico
+                        let linkUrl = item.link ? item.link.trim() : ''; 
+                        if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
+                        const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-globe"></i> Link</a>` : '-';
+                        
+                        tableRows += `<tr><td><span class="badge" style="background:#e5e7eb; color:#4b5563; border-color:#9ca3af;">CONCLUÍDO</span></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.aprovador || '-'}</td><td>${deleteBtnHtml}</td></tr>`;
+                    });
+
+                    accordionHTML += `
+                    <div style="margin-bottom: 10px;">
+                        <div class="accordion-header" onclick="toggleAccordion('${idBody}')">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-calendar-check"></i> 
+                                <span style="font-size: 15px;">${mes}</span>
+                                <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${itensMes.length} itens)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span>Total: ${formatCurrency(somaMes)}</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 12px;"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-body" id="${idBody}">
+                            <div class="table-container">
+                                <table>
+                                    <thead><tr><th>SITUAÇÃO</th><th>PRODUTO</th><th>QTD</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VAL. UN.</th><th>TOTAL GERAL</th><th>LINK</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
+                                    <tbody>${tableRows}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                accordionArea.innerHTML = accordionHTML;
+            }
         }
 
         window.addPedidoCompra = async () => {
@@ -1182,7 +1340,6 @@
 
         window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) await deleteDoc(doc(db, "manutencao", docId)); };
 
-        // DESENHO DA TELA DA MANUTENÇÃO (ATUALIZADA COM HIPERLINKS DE SITE)
         window.renderTelasManutencao = () => {
             const contAberto = document.getElementById('manutencaoAbertoContainer'); const contHist = document.getElementById('manutencaoHistoricoContainer');
             if(!contAberto || !contHist) return; contAberto.innerHTML = ""; contHist.innerHTML = "";
@@ -1225,11 +1382,8 @@
                         chatHtml = `<span style="font-size: 11px; color: var(--text-secondary); display: block; text-align: center; padding: 10px;">Nenhuma observação ainda.</span>`;
                     }
 
-                    // Logica do Hiperlink do Site
                     let siteUrl = placa.site ? placa.site.trim() : '';
-                    if(siteUrl && !siteUrl.startsWith('http://') && !siteUrl.startsWith('https://')){
-                        siteUrl = 'https://' + siteUrl;
-                    }
+                    if(siteUrl && !siteUrl.startsWith('http://') && !siteUrl.startsWith('https://')){ siteUrl = 'https://' + siteUrl; }
                     const siteLinkHtml = siteUrl ? `<a href="${siteUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline;"><i class="fa-solid fa-globe"></i> Site:</a>` : `<b style="color:var(--secondary-blue);"><i class="fa-solid fa-globe"></i> Site:</b>`;
 
                     placasHtml += `
@@ -1245,8 +1399,6 @@
                             <tr><td colspan="4" style="background: rgba(0,0,0,0.02);"><b>CNPJ:</b> <input type="text" style="width:70%; font-family: monospace;" placeholder="00.000.000/0000-00" value="${placa.cnpj || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'cnpj', this.value)" ${isBlocked}></td></tr>
                             <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" placeholder="Ex: 4.5 Estrelas Google" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
                             <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" placeholder="Ex: 5 anos" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
-                            
-                            <!-- AQUI ESTÁ O HIPERLINK DO SITE MODIFICADO -->
                             <tr><td colspan="4">${siteLinkHtml} <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
                             
                             <tr>
