@@ -17,7 +17,6 @@
             --card-bg: #ffffff;
             --text-color: #2c3e50;
             --text-secondary: #6c757d;
-            /* NOVA COR PRINCIPAL DA MARCA BRMOBILITY */
             --primary-blue: #0a3746; 
             --secondary-blue: #14566d;
             --accent-blue: #2a8aab;
@@ -34,7 +33,6 @@
             --card-bg: #0d2833;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
-            /* NOVA COR PRINCIPAL ADAPTADA PARA DARK MODE */
             --primary-blue: #1e708a; 
             --secondary-blue: #2a8aab;
             --accent-blue: #52b3d4;
@@ -221,7 +219,6 @@
         }
         .tab-btn.highlight:hover { background-color: var(--secondary-blue); }
 
-        /* Botão Manutenção */
         .tab-btn.highlight-teal {
             background-color: var(--teal-color);
             color: #ffffff !important;
@@ -230,7 +227,6 @@
         }
         .tab-btn.highlight-teal:hover { background-color: #00a3a3; }
 
-        /* Botão Endomarketing */
         .tab-btn.highlight-purple {
             background-color: var(--endo-color);
             color: #ffffff !important;
@@ -276,7 +272,6 @@
         }
         .card-title { font-size: 16px; font-weight: bold; color: var(--primary-blue); display: flex; align-items: center; gap: 8px; }
 
-        /* Hierarchy Drilldown (Tree) */
         .tree-node { margin-bottom: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); }
         .tree-header { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; user-select: none; }
         .tree-header:hover { background-color: var(--hover-blue); }
@@ -350,7 +345,6 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
-            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
             <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
@@ -366,7 +360,6 @@
 
     <header>
         <div class="title-container">
-            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
             <h1 style="display: flex; align-items: center; gap: 15px;">
                 <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-height: 40px;">
                 Dashboard Interativo de Custos Administrativos
@@ -992,7 +985,7 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO (MANTIDO)
+        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO COM ESCUDOS)
         // ==========================================
         
         function gerarPlacasVazias() {
@@ -1000,11 +993,8 @@
             for(let i=0; i<5; i++){
                 placas.push({
                     empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
+                    // Inicia com apenas 1 linha por padrão, para ficar limpo
                     linhas: [
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" },
                         { item: "", qtde: "", valorUn: "", valorTotal: "" }
                     ],
                     valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
@@ -1056,18 +1046,63 @@
             }; reader.readAsArrayBuffer(file);
         };
 
+        // ESCUDOS APLICADOS ABAIXO PARA IMPEDIR TRAVAMENTOS COM DADOS ANTIGOS
+
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
-            if(pedido) { let novasPlacas = [...pedido.placas]; novasPlacas[placaIndex][campo] = valor; await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); }
+            if(pedido) { 
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : [])); 
+                if(novasPlacas[placaIndex]) {
+                    novasPlacas[placaIndex][campo] = valor; 
+                    await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); 
+                }
+            }
         };
 
         window.atualizarLinhaPlacaManutencao = async (docId, placaIndex, linhaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
-                let novasPlacas = [...pedido.placas];
-                if (!novasPlacas[placaIndex].linhas) { novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" }, { item: "", qtde: "", valorUn: "", valorTotal: "" } ]; }
-                novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor;
-                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                if(novasPlacas[placaIndex]) {
+                    if (!Array.isArray(novasPlacas[placaIndex].linhas)) { 
+                        novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ]; 
+                    }
+                    if(!novasPlacas[placaIndex].linhas[linhaIndex]) {
+                        novasPlacas[placaIndex].linhas[linhaIndex] = { item: "", qtde: "", valorUn: "", valorTotal: "" };
+                    }
+                    novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor;
+                    await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                }
+            }
+        };
+
+        window.adicionarNovaLinhaPlaca = async (docId, placaIndex) => {
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                if(novasPlacas[placaIndex]) {
+                    if (!Array.isArray(novasPlacas[placaIndex].linhas)) {
+                        novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ];
+                    }
+                    novasPlacas[placaIndex].linhas.push({ item: "", qtde: "", valorUn: "", valorTotal: "" });
+                    await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                }
+            }
+        };
+
+        window.removerLinhaPlaca = async (docId, placaIndex, linhaIndex) => {
+            if(!confirm("Deseja remover esta linha de item?")) return;
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                if(novasPlacas[placaIndex]) {
+                    if (Array.isArray(novasPlacas[placaIndex].linhas) && novasPlacas[placaIndex].linhas.length > 1) {
+                        novasPlacas[placaIndex].linhas.splice(linhaIndex, 1);
+                        await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                    } else {
+                        alert("Você não pode remover a última linha restante.");
+                    }
+                }
             }
         };
 
@@ -1089,6 +1124,7 @@
 
         window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) await deleteDoc(doc(db, "manutencao", docId)); };
 
+        // ESCUDOS APLICADOS NO DESENHO DA TELA
         window.renderTelasManutencao = () => {
             const contAberto = document.getElementById('manutencaoAbertoContainer'); const contHist = document.getElementById('manutencaoHistoricoContainer');
             if(!contAberto || !contHist) return; contAberto.innerHTML = ""; contHist.innerHTML = "";
@@ -1097,13 +1133,38 @@
             pedidosManutencao.forEach(item => {
                 const isAberto = (item.situacao === 'EM ABERTO' || item.situacao === 'EM ANALISE');
                 let placasHtml = "";
-                item.placas.forEach((placa, index) => {
+                
+                // ESCUDO: Se o pedido não tiver placas (ou for inválido), cria uma lista vazia automática
+                let placasData = Array.isArray(item.placas) ? item.placas : [];
+                
+                placasData.forEach((placa, index) => {
+                    if (!placa) return; // Ignora se houver algum erro grave na placa antiga
+                    
                     const isPlacaAprovada = item.placaAprovadaIndex === index;
-                    let linhasData = placa.linhas || [ {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""}, {item: "", qtde: "", valorUn: "", valorTotal: ""} ];
+                    
+                    // ESCUDO: Proteção na leitura das linhas da tabela
+                    let linhasData = Array.isArray(placa.linhas) ? placa.linhas : [ {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""} ];
+
                     let linhasHtml = "";
-                    for(let r=0; r<5; r++){
-                        linhasHtml += `<tr><td style="text-align: left;"><input type="text" value="${linhasData[r].item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;"></td><td><input type="text" value="${linhasData[r].qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td><td><input type="text" value="${linhasData[r].valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td><td><input type="text" value="${linhasData[r].valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked}></td></tr>`;
-                    }
+                    linhasData.forEach((linha, r) => {
+                        if (!linha) linha = { item: "", qtde: "", valorUn: "", valorTotal: "" };
+                        
+                        linhasHtml += `
+                        <tr>
+                            <td style="text-align: left; position: relative;">
+                                <input type="text" value="${linha.item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;">
+                            </td>
+                            <td><input type="text" value="${linha.qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td>
+                            <td><input type="text" value="${linha.valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td>
+                            <td style="padding: 2px;">
+                                <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
+                                    <input type="text" value="${linha.valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked} style="flex: 1; min-width: 0;">
+                                    ${(!isBlocked && linhasData.length > 1) ? `<button type="button" onclick="removerLinhaPlaca('${item.id}', ${index},${r})" style="background: transparent; border: none; color: #dc2626; cursor: pointer; padding: 0 5px;" title="Remover item"><i class="fa-solid fa-trash-can"></i></button>` : `<div style="width: 24px;"></div>`}
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+
                     placasHtml += `
                     <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
                         ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
@@ -1112,22 +1173,31 @@
                         <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
                         <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
                         <tr><td colspan="4"><a href="${placa.site && !placa.site.startsWith('http') ? 'https://'+placa.site : placa.site || '#'}" target="_blank" style="color:var(--secondary-blue);">Site:</a> <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
-                        <tr><th class="teal-bg" style="font-size:10px; width: 55%; text-align: left; padding-left: 8px;">Itens</th><th class="teal-bg" style="font-size:10px; width: 15%;">Qtde</th><th class="teal-bg" style="font-size:10px; width: 15%;">Valor Unit.</th><th class="teal-bg" style="font-size:10px; width: 15%;">Valor Total</th></tr>
+                        
+                        <tr>
+                            <th class="teal-bg" style="font-size:10px; width: 50%; text-align: left; padding-left: 8px;">Itens</th>
+                            <th class="teal-bg" style="font-size:10px; width: 12%;">Qtde</th>
+                            <th class="teal-bg" style="font-size:10px; width: 15%;">Valor Unit.</th>
+                            <th class="teal-bg" style="font-size:10px; width: 23%;">Valor Total</th>
+                        </tr>
                         ${linhasHtml}
+                        ${!isBlocked ? `<tr><td colspan="4" style="text-align: left; border: none; padding-top: 8px;"><button type="button" onclick="adicionarNovaLinhaPlaca('${item.id}',${index})" style="background: none; border: none; color: var(--teal-color); font-weight: bold; cursor: pointer; font-size: 11px;"><i class="fa-solid fa-plus"></i> Adicionar Item</button></td></tr>` : ''}
+                        
                         <tr><td colspan="4">&nbsp;</td></tr>
                         <tr><td colspan="2"><b>Valor total geral</b></td><td colspan="2">R$ <input type="text" style="width:60%; font-weight:bold;" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></td></tr>
                         <tr><th colspan="4" class="teal-bg">Prazo: <input type="text" style="width:70%; color:white;" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Emissão de NF: <input type="text" style="width:60%; color:white;" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></th></tr>
                         <tr><th colspan="4" class="teal-bg">Forma Pgto: <input type="text" style="width:60%; color:white;" value="${placa.pagamento || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'pagamento', this.value)" ${isBlocked}></th></tr>
-                        ${!isPlacaAprovada ? `<tr><td colspan="4" style="padding: 10px;"><button class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação</button></td></tr>` : ''}
+                        ${!isPlacaAprovada ? `<tr><td colspan="4" style="padding: 10px;"><button type="button" class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação</button></td></tr>` : ''}
                     </table>
                     `;
                 });
+                
                 const htmlItem = `
                 <div class="manutencao-item">
                     <div class="manutencao-header">
                         <div><h3 style="color: var(--primary-blue); font-size: 15px;">${item.titulo}</h3><span style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> Local: ${item.local} | Criado em: ${item.dataCriacao}</span></div>
-                        <div>${isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir</button>` : ''}</div>
+                        <div>${isAdmin ? `<button type="button" class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir</button>` : ''}</div>
                     </div>
                     <div class="placas-wrapper">${placasHtml}</div>
                     <div class="diretoria-controls">
@@ -1259,108 +1329,6 @@
                 });
             }
         }
-        
-        // ==========================================
-        // ABA DE COMPRAS (FUNÇÕES MANTIDAS)
-        // ==========================================
-        function getStatusClass(status) {
-            switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; default: return 'status-aberto'; }
-        }
-        window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); } }
-        window.atualizarCampoCompra = async (docId, campo, valor) => { try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } catch(e) { console.error(e); } }
-        window.removerPedidoCompra = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "pedidos_compras", docId)); } catch(e) { console.error(e); } } }
-        
-        // --- FUNÇÃO RESTAURADA: UPLOAD DE COMPRAS ---
-        window.handleFileUploadCompras = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-
-                if (jsonData.length > 0) {
-                    const novosPedidos = jsonData.map(row => {
-                        const getVal = (possibleNames) => {
-                            const foundKey = Object.keys(row).find(k => possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase()));
-                            return foundKey ? row[foundKey] : '';
-                        };
-
-                        const parseNum = (val) => {
-                            if (typeof val === 'string') { val = val.replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); }
-                            return parseFloat(val) || 0;
-                        };
-
-                        return {
-                            situacao: (getVal(['SITUAÇÃO', 'SITUACAO', 'STATUS']) || 'EM ABERTO').toUpperCase(),
-                            produto: getVal(['PRODUTO', 'ITEM', 'DESCRIÇÃO']) || '-',
-                            qtd: parseNum(getVal(['QUANTIDADE', 'QTD'])) || 1, 
-                            loja: getVal(['LOJA', 'FORNECEDOR']) || '-',
-                            departamento: getVal(['DEPARTAMENTO', 'SETOR']) || '-',
-                            valorUn: parseNum(getVal(['VALOR UN.', 'VALOR UN', 'PREÇO'])),
-                            desconto: parseNum(getVal(['DESCONTO'])),
-                            frete: parseNum(getVal(['FRETE'])),
-                            imposto: parseNum(getVal(['IMPOSTO', 'TAXA'])),
-                            link: getVal(['LINK', 'URL']) || '',
-                            utilidade: getVal(['UTILIDADE', 'MOTIVO']) || '-',
-                            obs: getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '',
-                            aprovador: getVal(['APROVADOR', 'RESPONSÁVEL', 'NOME']) || ''
-                        };
-                    });
-
-                    document.getElementById('statusFirebase').innerText = "Sincronizando Compras...";
-                    document.getElementById('statusFirebase').style.color = "orange";
-
-                    try {
-                        const querySnapshot = await getDocs(collection(db, "pedidos_compras"));
-                        const deletePromises = [];
-                        querySnapshot.forEach((docSnap) => deletePromises.push(deleteDoc(docSnap.ref)));
-                        await Promise.all(deletePromises); 
-
-                        for (let i = 0; i < novosPedidos.length; i++) {
-                            await addDoc(collection(db, "pedidos_compras"), novosPedidos[i]);
-                        }
-                        
-                        document.getElementById('statusFirebase').innerText = "Online (Sincronizado)";
-                        document.getElementById('statusFirebase').style.color = "green";
-                        document.getElementById('fileInputCompras').value = ""; 
-                        alert('Planilha de Pedidos de Compras sincronizada com o banco de dados!');
-                    } catch (error) {
-                        console.error("Erro no Firebase:", error);
-                        alert("Erro ao salvar compras. Verifique suas permissões.");
-                    }
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        };
-        // ----------------------------------------------
-
-        window.renderTabelaCompras = () => {
-            const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
-            const disabledAttr = isAdmin || window.nomeUsuarioRestrito ? '' : 'disabled="disabled"';
-            pedidosCompras.forEach((item) => {
-                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
-                const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
-                let linkUrl = item.link ? item.link.trim() : ''; if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
-                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra('${item.id}', this.value)" ${disabledAttr}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}></td><td>${deleteBtnHtml}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
-        
-        window.addPedidoCompra = async () => {
-            const prod = document.getElementById('compProd').value; if(!prod) { alert('Informe produto.'); return; }
-            const novoItem = { situacao: document.getElementById('compSit').value, produto: prod, qtd: parseFloat(document.getElementById('compQtd').value) || 0, loja: document.getElementById('compLoja').value || '-', departamento: document.getElementById('compDep').value || '-', valorUn: parseFloat(document.getElementById('compValUn').value) || 0, desconto: parseFloat(document.getElementById('compDesc').value) || 0, frete: parseFloat(document.getElementById('compFrete').value) || 0, imposto: parseFloat(document.getElementById('compImp').value) || 0, link: document.getElementById('compLink').value || '', utilidade: document.getElementById('compUtil').value || '-', obs: document.getElementById('compObs').value || '', aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' };
-            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar."); }
-        }
-
-        window.clearTabSelection = (fieldKey) => { selectedFilters[fieldKey] = null; renderDashboard(); }
-        window.applyFilters = () => { renderDashboard(); }
-        window.exportToExcel = (tableId, filename) => { const table = document.getElementById(tableId); const wb = XLSX.utils.table_to_book(table, { sheet: "Relatório" }); XLSX.writeFile(wb, `${filename}.xlsx`); }
     </script>
 </body>
 </html>
