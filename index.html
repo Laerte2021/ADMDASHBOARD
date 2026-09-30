@@ -272,7 +272,6 @@
         }
         .card-title { font-size: 16px; font-weight: bold; color: var(--primary-blue); display: flex; align-items: center; gap: 8px; }
 
-        /* Hierarchy Drilldown (Tree) */
         .tree-node { margin-bottom: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); }
         .tree-header { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; user-select: none; }
         .tree-header:hover { background-color: var(--hover-blue); }
@@ -346,7 +345,6 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
-            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
             <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
@@ -362,7 +360,6 @@
 
     <header>
         <div class="title-container">
-            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
             <h1 style="display: flex; align-items: center; gap: 15px;">
                 <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-height: 40px;">
                 Dashboard Interativo de Custos Administrativos
@@ -1077,22 +1074,16 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO COM ESCUDOS)
+        // CÓDIGO DA ABA DE MANUTENÇÃO (TOTALMENTE DINÂMICO E PROTEGIDO)
         // ==========================================
         
         function gerarPlacasVazias() {
-            let placas = [];
-            for(let i=0; i<5; i++){
-                placas.push({
-                    empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
-                    // Inicia com apenas 1 linha por padrão, para ficar limpo
-                    linhas: [
-                        { item: "", qtde: "", valorUn: "", valorTotal: "" }
-                    ],
-                    valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
-                });
-            }
-            return placas;
+            // Agora nasce com apenas 1 placa em branco
+            return [{
+                empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
+                linhas: [ { item: "", qtde: "", valorUn: "", valorTotal: "" } ],
+                valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
+            }];
         }
 
         window.addPedidoManutencao = async () => {
@@ -1139,7 +1130,6 @@
         };
 
         // ESCUDOS APLICADOS ABAIXO PARA IMPEDIR TRAVAMENTOS COM DADOS ANTIGOS
-
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) { 
@@ -1194,6 +1184,46 @@
                     } else {
                         alert("Você não pode remover a última linha restante.");
                     }
+                }
+            }
+        };
+
+        // NOVA FUNÇÃO: ADICIONAR PLACA DINÂMICA
+        window.adicionarPlacaManutencao = async (docId) => {
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                novasPlacas.push({
+                    empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
+                    linhas: [ { item: "", qtde: "", valorUn: "", valorTotal: "" } ],
+                    valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
+                });
+                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+            }
+        };
+
+        // NOVA FUNÇÃO: REMOVER PLACA DINÂMICA
+        window.removerPlacaManutencao = async (docId, placaIndex) => {
+            if(!confirm("Tem certeza que deseja apagar esta cotação (placa) inteira?")) return;
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                if(novasPlacas.length > 1) {
+                    novasPlacas.splice(placaIndex, 1);
+                    // Se a placa removida for a que estava aprovada, resetamos a aprovação
+                    let novaAprovacao = pedido.placaAprovadaIndex;
+                    if(novaAprovacao === placaIndex) novaAprovacao = null;
+                    else if (novaAprovacao > placaIndex) novaAprovacao -= 1;
+
+                    let updateData = { placas: novasPlacas };
+                    if (novaAprovacao !== pedido.placaAprovadaIndex) {
+                        updateData.placaAprovadaIndex = novaAprovacao;
+                        if(novaAprovacao === null) updateData.situacao = "EM ANALISE"; // volta pro status aberto se deletar a aprovada
+                    }
+
+                    await updateDoc(doc(db, "manutencao", docId), updateData);
+                } else {
+                    alert("O pedido precisa ter pelo menos 1 cotação. Você não pode remover a última placa.");
                 }
             }
         };
@@ -1260,7 +1290,12 @@
                     placasHtml += `
                     <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
                         ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
-                        <tr><th colspan="4" class="teal-bg"><input type="text" placeholder="Nome da Empresa" value="${placa.empresa || ''}" style="color: white; font-weight: bold; font-size: 14px;" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'empresa', this.value)" ${isBlocked}></th></tr>
+                        <tr>
+                            <th colspan="4" class="teal-bg" style="position: relative;">
+                                <input type="text" placeholder="Nome da Empresa" value="${placa.empresa || ''}" style="color: white; font-weight: bold; font-size: 14px; width: 90%;" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'empresa', this.value)" ${isBlocked}>
+                                ${(!isBlocked && placasData.length > 1) ? `<button type="button" onclick="removerPlacaManutencao('${item.id}',${index})" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #fca5a5; cursor: pointer; font-size: 14px;" title="Apagar esta placa inteira"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            </th>
+                        </tr>
                         <tr><th colspan="4" class="teal-bg">CNPJ: <input type="text" style="width:70%; color:white;" placeholder="00.000.000/0000-00" value="${placa.cnpj || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'cnpj', this.value)" ${isBlocked}></th></tr>
                         <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
                         <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
@@ -1289,9 +1324,16 @@
                 <div class="manutencao-item">
                     <div class="manutencao-header">
                         <div><h3 style="color: var(--primary-blue); font-size: 15px;">${item.titulo}</h3><span style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> Local: ${item.local} | Criado em: ${item.dataCriacao}</span></div>
-                        <div>${isAdmin ? `<button type="button" class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir</button>` : ''}</div>
+                        <div>${isAdmin ? `<button type="button" class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerManutencao('${item.id}')"><i class="fa-solid fa-trash"></i> Excluir Pedido</button>` : ''}</div>
                     </div>
-                    <div class="placas-wrapper">${placasHtml}</div>
+                    <div class="placas-wrapper">
+                        ${placasHtml}
+                        ${!isBlocked ? `
+                        <div style="display: flex; align-items: center; justify-content: center; min-width: 150px; border: 2px dashed var(--border-color); border-radius: 8px; background: transparent; cursor: pointer; transition: 0.3s;" onmouseover="this.style.backgroundColor='var(--hover-blue)'" onmouseout="this.style.backgroundColor='transparent'" onclick="adicionarPlacaManutencao('${item.id}')">
+                            <span style="color: var(--teal-color); font-weight: bold; text-align: center;"><i class="fa-solid fa-plus-circle" style="font-size: 24px; display: block; margin-bottom: 5px;"></i> Adicionar Cotação</span>
+                        </div>
+                        ` : ''}
+                    </div>
                     <div class="diretoria-controls">
                         <h4 style="font-size: 13px; color: var(--primary-blue); margin-bottom: 10px;"><i class="fa-solid fa-gavel"></i> Avaliação da Diretoria</h4>
                         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
