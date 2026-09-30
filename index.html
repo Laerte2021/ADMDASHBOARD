@@ -313,20 +313,97 @@
         .close-modal { position: absolute; right: 15px; top: 10px; font-size: 20px; cursor: pointer; color: var(--text-secondary); }
 
         /* ================== ESTILOS ESPECÍFICOS DA ABA MANUTENÇÃO ================== */
-        .manutencao-item { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; padding: 15px; background: var(--card-bg); box-shadow: var(--shadow); }
-        .manutencao-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .manutencao-item { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; padding: 20px; background: var(--card-bg); box-shadow: var(--shadow); }
+        .manutencao-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--hover-blue); padding-bottom: 15px; margin-bottom: 20px; }
         
-        .placas-wrapper { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .placa-card { min-width: 380px; border: 1px solid #000; background: #fff; color: #000; border-collapse: collapse; font-size: 12px; transition: 0.3s; }
-        .placa-card th, .placa-card td { border: 1px solid #000; padding: 4px 6px; text-align: center; }
-        .placa-card .teal-bg { background-color: var(--teal-color); color: white; font-weight: bold; }
-        .placa-card input { width: 100%; border: none; background: transparent; text-align: center; font-size: 12px; }
-        .placa-card input:focus { outline: 1px solid var(--secondary-blue); }
+        .placas-wrapper { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start; }
+        
+        /* NOVO DESIGN DA PLACA */
+        .placa-card { 
+            min-width: 400px; 
+            border: 1px solid var(--border-color); 
+            background: var(--card-bg); 
+            color: var(--text-color); 
+            border-collapse: separate; 
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 13px; 
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .placa-card th, .placa-card td { border-bottom: 1px solid var(--border-color); padding: 8px 10px; text-align: left; }
+        .placa-card td:not(:last-child), .placa-card th:not(:last-child) { border-right: 1px solid var(--border-color); }
+        .placa-card tr:last-child td { border-bottom: none; }
+        
+        .placa-card .teal-bg { background-color: var(--teal-color); color: white; font-weight: bold; border-color: rgba(255,255,255,0.2) !important; }
+        
+        /* Inputs dentro da placa mais integrados */
+        .placa-card input { 
+            width: 100%; border: 1px solid transparent; background: transparent; 
+            color: inherit; font-size: 13px; padding: 4px; border-radius: 4px;
+            transition: 0.2s;
+        }
+        .placa-card input:focus { outline: none; border-color: rgba(0,0,0,0.2); background: rgba(0,0,0,0.02); }
+        .placa-card .teal-bg input { color: white; }
+        .placa-card .teal-bg input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); }
         .placa-card .teal-bg input::placeholder { color: rgba(255, 255, 255, 0.7); }
         
+        /* Estilos do Mini Chat / Observações na Placa */
+        .chat-container {
+            background-color: var(--hover-blue);
+            border-top: 1px solid var(--border-color);
+            padding: 10px;
+        }
+        .chat-messages {
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 5px;
+        }
+        .chat-bubble {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            position: relative;
+        }
+        .chat-author { font-weight: bold; color: var(--primary-blue); font-size: 11px; margin-bottom: 2px;}
+        .chat-time { font-size: 9px; color: var(--text-secondary); position: absolute; right: 8px; top: 8px; }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 5px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 6px 10px !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 15px !important;
+            background: var(--card-bg) !important;
+        }
+        .chat-input-area button {
+            background: var(--teal-color);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .chat-input-area button:hover { background: #00a3a3; transform: scale(1.05); }
+
         .diretoria-controls { background: var(--hover-blue); border: 1px dashed var(--secondary-blue); padding: 15px; border-radius: 8px; margin-top: 15px; }
 
-        .placa-aprovada { border: 3px solid #10b981 !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important; transform: scale(1.02); z-index: 10; }
+        .placa-aprovada { border: 2px solid #10b981 !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2) !important; }
         .selo-aprovado { background-color: #10b981; color: white; text-align: center; font-weight: bold; padding: 6px !important; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: none !important; }
 
         /* ================== ESTILOS ESPECÍFICOS DA ABA ENDOMARKETING ================== */
@@ -345,6 +422,7 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
+            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
             <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
@@ -360,6 +438,7 @@
 
     <header>
         <div class="title-container">
+            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
             <h1 style="display: flex; align-items: center; gap: 15px;">
                 <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-height: 40px;">
                 Dashboard Interativo de Custos Administrativos
@@ -1074,14 +1153,14 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO (TOTALMENTE DINÂMICO E PROTEGIDO)
+        // CÓDIGO DA ABA DE MANUTENÇÃO (REFINADO E COM CHAT)
         // ==========================================
         
         function gerarPlacasVazias() {
-            // Agora nasce com apenas 1 placa em branco
             return [{
                 empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
                 linhas: [ { item: "", qtde: "", valorUn: "", valorTotal: "" } ],
+                mensagens: [], // Novo array para o Chat
                 valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
             }];
         }
@@ -1129,7 +1208,6 @@
             }; reader.readAsArrayBuffer(file);
         };
 
-        // ESCUDOS APLICADOS ABAIXO PARA IMPEDIR TRAVAMENTOS COM DADOS ANTIGOS
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) { 
@@ -1188,7 +1266,6 @@
             }
         };
 
-        // NOVA FUNÇÃO: ADICIONAR PLACA DINÂMICA
         window.adicionarPlacaManutencao = async (docId) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
             if(pedido) {
@@ -1196,13 +1273,13 @@
                 novasPlacas.push({
                     empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "",
                     linhas: [ { item: "", qtde: "", valorUn: "", valorTotal: "" } ],
+                    mensagens: [],
                     valorTotalGeral: "", prazo: "", emissao: "", pagamento: ""
                 });
                 await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
             }
         };
 
-        // NOVA FUNÇÃO: REMOVER PLACA DINÂMICA
         window.removerPlacaManutencao = async (docId, placaIndex) => {
             if(!confirm("Tem certeza que deseja apagar esta cotação (placa) inteira?")) return;
             const pedido = pedidosManutencao.find(p => p.id === docId);
@@ -1210,7 +1287,6 @@
                 let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
                 if(novasPlacas.length > 1) {
                     novasPlacas.splice(placaIndex, 1);
-                    // Se a placa removida for a que estava aprovada, resetamos a aprovação
                     let novaAprovacao = pedido.placaAprovadaIndex;
                     if(novaAprovacao === placaIndex) novaAprovacao = null;
                     else if (novaAprovacao > placaIndex) novaAprovacao -= 1;
@@ -1218,12 +1294,41 @@
                     let updateData = { placas: novasPlacas };
                     if (novaAprovacao !== pedido.placaAprovadaIndex) {
                         updateData.placaAprovadaIndex = novaAprovacao;
-                        if(novaAprovacao === null) updateData.situacao = "EM ANALISE"; // volta pro status aberto se deletar a aprovada
+                        if(novaAprovacao === null) updateData.situacao = "EM ANALISE"; 
                     }
-
                     await updateDoc(doc(db, "manutencao", docId), updateData);
                 } else {
                     alert("O pedido precisa ter pelo menos 1 cotação. Você não pode remover a última placa.");
+                }
+            }
+        };
+
+        // NOVA FUNÇÃO DO CHAT:
+        window.enviarMensagemChat = async (docId, placaIndex) => {
+            if(!window.nomeUsuarioRestrito && !isAdmin) { alert("Identifique-se primeiro recarregando a aba Manutenção."); return; }
+            const inputField = document.getElementById(`chatInput_${docId}_${placaIndex}`);
+            const texto = inputField.value.trim();
+            if(!texto) return;
+
+            const autor = window.nomeUsuarioRestrito || "Administrador";
+            const now = new Date();
+            const dataHora = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            const pedido = pedidosManutencao.find(p => p.id === docId);
+            if(pedido) {
+                let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
+                if(novasPlacas[placaIndex]) {
+                    if (!Array.isArray(novasPlacas[placaIndex].mensagens)) {
+                        novasPlacas[placaIndex].mensagens = [];
+                    }
+                    novasPlacas[placaIndex].mensagens.push({ autor: autor, texto: texto, data: dataHora });
+                    
+                    try {
+                        await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                        inputField.value = "";
+                    } catch (e) {
+                        console.error("Erro ao enviar mensagem:", e);
+                    }
                 }
             }
         };
@@ -1246,25 +1351,23 @@
 
         window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) await deleteDoc(doc(db, "manutencao", docId)); };
 
-        // ESCUDOS APLICADOS NO DESENHO DA TELA
+        // DESENHO DA TELA
         window.renderTelasManutencao = () => {
             const contAberto = document.getElementById('manutencaoAbertoContainer'); const contHist = document.getElementById('manutencaoHistoricoContainer');
             if(!contAberto || !contHist) return; contAberto.innerHTML = ""; contHist.innerHTML = "";
-            const isBlocked = !window.nomeUsuarioRestrito ? 'disabled' : '';
+            const isBlocked = !window.nomeUsuarioRestrito && !isAdmin ? 'disabled' : '';
 
             pedidosManutencao.forEach(item => {
                 const isAberto = (item.situacao === 'EM ABERTO' || item.situacao === 'EM ANALISE');
                 let placasHtml = "";
                 
-                // ESCUDO: Se o pedido não tiver placas (ou for inválido), cria uma lista vazia automática
                 let placasData = Array.isArray(item.placas) ? item.placas : [];
                 
                 placasData.forEach((placa, index) => {
-                    if (!placa) return; // Ignora se houver algum erro grave na placa antiga
+                    if (!placa) return;
                     
                     const isPlacaAprovada = item.placaAprovadaIndex === index;
                     
-                    // ESCUDO: Proteção na leitura das linhas da tabela
                     let linhasData = Array.isArray(placa.linhas) ? placa.linhas : [ {item: placa.itens || "", qtde: placa.qtde || "", valorUn: placa.valorUn || "", valorTotal: placa.valorTotalItem || ""} ];
 
                     let linhasHtml = "";
@@ -1274,49 +1377,87 @@
                         linhasHtml += `
                         <tr>
                             <td style="text-align: left; position: relative;">
-                                <input type="text" value="${linha.item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;">
+                                <input type="text" placeholder="Nome do item" value="${linha.item || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'item', this.value)" ${isBlocked} style="text-align: left; padding-left: 5px;">
                             </td>
-                            <td><input type="text" value="${linha.qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td>
-                            <td><input type="text" value="${linha.valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td>
+                            <td><input type="text" placeholder="Qtd" value="${linha.qtde || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'qtde', this.value)" ${isBlocked}></td>
+                            <td><input type="text" placeholder="R$ 0,00" value="${linha.valorUn || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorUn', this.value)" ${isBlocked}></td>
                             <td style="padding: 2px;">
                                 <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
-                                    <input type="text" value="${linha.valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked} style="flex: 1; min-width: 0;">
+                                    <input type="text" placeholder="Total" value="${linha.valorTotal || ''}" onchange="atualizarLinhaPlacaManutencao('${item.id}', ${index}, ${r}, 'valorTotal', this.value)" ${isBlocked} style="flex: 1; min-width: 0; font-weight: bold;">
                                     ${(!isBlocked && linhasData.length > 1) ? `<button type="button" onclick="removerLinhaPlaca('${item.id}', ${index},${r})" style="background: transparent; border: none; color: #dc2626; cursor: pointer; padding: 0 5px;" title="Remover item"><i class="fa-solid fa-trash-can"></i></button>` : `<div style="width: 24px;"></div>`}
                                 </div>
                             </td>
                         </tr>`;
                     });
 
+                    // CONSTRUINDO AS MENSAGENS DO CHAT
+                    let msgsData = Array.isArray(placa.mensagens) ? placa.mensagens : [];
+                    let chatHtml = "";
+                    if(msgsData.length > 0) {
+                        msgsData.forEach(msg => {
+                            chatHtml += `
+                            <div class="chat-bubble">
+                                <div class="chat-author"><i class="fa-solid fa-user-circle"></i> ${msg.autor}</div>
+                                <div class="chat-time">${msg.data}</div>
+                                <div style="margin-top: 3px;">${msg.texto}</div>
+                            </div>
+                            `;
+                        });
+                    } else {
+                        chatHtml = `<span style="font-size: 11px; color: var(--text-secondary); display: block; text-align: center; padding: 10px;">Nenhuma observação ainda.</span>`;
+                    }
+
                     placasHtml += `
-                    <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
-                        ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
-                        <tr>
-                            <th colspan="4" class="teal-bg" style="position: relative;">
-                                <input type="text" placeholder="Nome da Empresa" value="${placa.empresa || ''}" style="color: white; font-weight: bold; font-size: 14px; width: 90%;" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'empresa', this.value)" ${isBlocked}>
-                                ${(!isBlocked && placasData.length > 1) ? `<button type="button" onclick="removerPlacaManutencao('${item.id}',${index})" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #fca5a5; cursor: pointer; font-size: 14px;" title="Apagar esta placa inteira"><i class="fa-solid fa-trash"></i></button>` : ''}
-                            </th>
-                        </tr>
-                        <tr><th colspan="4" class="teal-bg">CNPJ: <input type="text" style="width:70%; color:white;" placeholder="00.000.000/0000-00" value="${placa.cnpj || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'cnpj', this.value)" ${isBlocked}></th></tr>
-                        <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
-                        <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
-                        <tr><td colspan="4"><a href="${placa.site && !placa.site.startsWith('http') ? 'https://'+placa.site : placa.site || '#'}" target="_blank" style="color:var(--secondary-blue);">Site:</a> <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
-                        
-                        <tr>
-                            <th class="teal-bg" style="font-size:10px; width: 50%; text-align: left; padding-left: 8px;">Itens</th>
-                            <th class="teal-bg" style="font-size:10px; width: 12%;">Qtde</th>
-                            <th class="teal-bg" style="font-size:10px; width: 15%;">Valor Unit.</th>
-                            <th class="teal-bg" style="font-size:10px; width: 23%;">Valor Total</th>
-                        </tr>
-                        ${linhasHtml}
-                        ${!isBlocked ? `<tr><td colspan="4" style="text-align: left; border: none; padding-top: 8px;"><button type="button" onclick="adicionarNovaLinhaPlaca('${item.id}',${index})" style="background: none; border: none; color: var(--teal-color); font-weight: bold; cursor: pointer; font-size: 11px;"><i class="fa-solid fa-plus"></i> Adicionar Item</button></td></tr>` : ''}
-                        
-                        <tr><td colspan="4">&nbsp;</td></tr>
-                        <tr><td colspan="2"><b>Valor total geral</b></td><td colspan="2">R$ <input type="text" style="width:60%; font-weight:bold;" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></td></tr>
-                        <tr><th colspan="4" class="teal-bg">Prazo: <input type="text" style="width:70%; color:white;" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></th></tr>
-                        <tr><th colspan="4" class="teal-bg">Emissão de NF: <input type="text" style="width:60%; color:white;" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></th></tr>
-                        <tr><th colspan="4" class="teal-bg">Forma Pgto: <input type="text" style="width:60%; color:white;" value="${placa.pagamento || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'pagamento', this.value)" ${isBlocked}></th></tr>
-                        ${!isPlacaAprovada ? `<tr><td colspan="4" style="padding: 10px;"><button type="button" class="btn btn-outline" style="width:100%; font-size: 11px; padding: 6px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação</button></td></tr>` : ''}
-                    </table>
+                    <div style="display: flex; flex-direction: column;">
+                        <table class="placa-card ${isPlacaAprovada ? 'placa-aprovada' : ''}">
+                            ${isPlacaAprovada ? `<tr><td colspan="4" class="selo-aprovado"><i class="fa-solid fa-star"></i> COTAÇÃO APROVADA</td></tr>` : ''}
+                            <tr>
+                                <th colspan="4" class="teal-bg" style="position: relative; padding: 12px 10px;">
+                                    <input type="text" placeholder="Nome do Fornecedor / Empresa" value="${placa.empresa || ''}" style="color: white; font-weight: bold; font-size: 15px; width: 90%;" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'empresa', this.value)" ${isBlocked}>
+                                    ${(!isBlocked && placasData.length > 1) ? `<button type="button" onclick="removerPlacaManutencao('${item.id}',${index})" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #fca5a5; cursor: pointer; font-size: 15px;" title="Apagar esta placa inteira"><i class="fa-solid fa-trash"></i></button>` : ''}
+                                </th>
+                            </tr>
+                            <tr><td colspan="4" style="background: rgba(0,0,0,0.02);"><b>CNPJ:</b> <input type="text" style="width:70%; font-family: monospace;" placeholder="00.000.000/0000-00" value="${placa.cnpj || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'cnpj', this.value)" ${isBlocked}></td></tr>
+                            <tr><td colspan="4"><b>Avaliações:</b> <input type="text" style="width:70%" placeholder="Ex: 4.5 Estrelas Google" value="${placa.avaliacoes || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'avaliacoes', this.value)" ${isBlocked}></td></tr>
+                            <tr><td colspan="4"><b>Tempo de mercado:</b> <input type="text" style="width:50%" placeholder="Ex: 5 anos" value="${placa.tempo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'tempo', this.value)" ${isBlocked}></td></tr>
+                            <tr><td colspan="4"><b style="color:var(--secondary-blue);"><i class="fa-solid fa-globe"></i> Site:</b> <input type="text" style="width:70%" placeholder="www..." value="${placa.site || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'site', this.value)" ${isBlocked}></td></tr>
+                            
+                            <tr>
+                                <th class="teal-bg" style="font-size:11px; width: 48%; text-align: left; padding-left: 8px;">Itens / Serviço</th>
+                                <th class="teal-bg" style="font-size:11px; width: 12%;">Qtd</th>
+                                <th class="teal-bg" style="font-size:11px; width: 18%;">V. Unit.</th>
+                                <th class="teal-bg" style="font-size:11px; width: 22%;">V. Total</th>
+                            </tr>
+                            ${linhasHtml}
+                            ${!isBlocked ? `<tr><td colspan="4" style="text-align: left; padding: 8px 10px; background: rgba(0,0,0,0.01);"><button type="button" onclick="adicionarNovaLinhaPlaca('${item.id}',${index})" style="background: none; border: none; color: var(--teal-color); font-weight: bold; cursor: pointer; font-size: 11px;"><i class="fa-solid fa-plus"></i> Adicionar linha de item</button></td></tr>` : ''}
+                            
+                            <tr>
+                                <td colspan="2" style="padding-top: 15px;"><b>Total Geral:</b></td>
+                                <td colspan="2" style="padding-top: 15px; color: var(--primary-blue);"><b>R$ <input type="text" style="width:60%; font-weight:bold; font-size: 14px; color: inherit;" placeholder="0,00" value="${placa.valorTotalGeral || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'valorTotalGeral', this.value)" ${isBlocked}></b></td>
+                            </tr>
+                            <tr><td colspan="4" style="font-size: 12px;"><b>Prazo de Entrega:</b> <input type="text" style="width:60%;" placeholder="Ex: 5 dias úteis" value="${placa.prazo || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'prazo', this.value)" ${isBlocked}></td></tr>
+                            <tr><td colspan="4" style="font-size: 12px;"><b>Emissão de NF:</b> <input type="text" style="width:60%;" placeholder="Sim / Não" value="${placa.emissao || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'emissao', this.value)" ${isBlocked}></td></tr>
+                            <tr><td colspan="4" style="font-size: 12px; border-bottom: none;"><b>Forma de Pgto:</b> <input type="text" style="width:60%;" placeholder="Boleto, Pix..." value="${placa.pagamento || ''}" onchange="atualizarPlacaManutencao('${item.id}', ${index}, 'pagamento', this.value)" ${isBlocked}></td></tr>
+                            
+                            <!-- ÁREA DO CHAT -->
+                            <tr>
+                                <td colspan="4" style="padding: 0; border: none;">
+                                    <div class="chat-container">
+                                        <div style="font-size: 11px; font-weight: bold; color: var(--primary-blue); margin-bottom: 8px;"><i class="fa-solid fa-comments"></i> Observações / Dúvidas:</div>
+                                        <div class="chat-messages" id="chatArea_${item.id}_${index}">
+                                            ${chatHtml}
+                                        </div>
+                                        <div class="chat-input-area">
+                                            <input type="text" id="chatInput_${item.id}_${index}" placeholder="Escreva uma observação..." ${isBlocked} onkeypress="if(event.key === 'Enter') enviarMensagemChat('${item.id}', ${index})">
+                                            <button type="button" onclick="enviarMensagemChat('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-paper-plane"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            ${!isPlacaAprovada ? `<tr><td colspan="4" style="padding: 10px; text-align: center;"><button type="button" class="btn btn-outline" style="width:90%; font-size: 11px; padding: 8px; border-color: #10b981; color: #10b981;" onclick="aprovarCotacaoManutencao('${item.id}', ${index})" ${isBlocked}><i class="fa-solid fa-thumbs-up"></i> Aprovar esta cotação</button></td></tr>` : ''}
+                        </table>
+                    </div>
                     `;
                 });
                 
@@ -1338,7 +1479,7 @@
                         <h4 style="font-size: 13px; color: var(--primary-blue); margin-bottom: 10px;"><i class="fa-solid fa-gavel"></i> Avaliação da Diretoria</h4>
                         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 200px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Decisão / Status Geral</label><br><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusManut('${item.id}', this.value)" ${isBlocked} style="margin-top:4px; width: 100%;"><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO (Aguardando)</option><option value="APROVADA" ${item.situacao === 'APROVADA' ? 'selected' : ''}>APROVADA</option><option value="NÃO APROVADA" ${item.situacao === 'NÃO APROVADA' ? 'selected' : ''}>NÃO APROVADA</option></select></div>
-                            <div style="flex: 2; min-width: 250px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Questionamentos / Observações</label><br><input type="text" class="table-input" style="margin-top:4px;" value="${item.questionamento || ''}" placeholder="Digite aqui alguma dúvida..." onchange="atualizarQuestionamentoManut('${item.id}', this.value)" ${isBlocked}></div>
+                            <div style="flex: 2; min-width: 250px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Comentário Geral do Pedido</label><br><input type="text" class="table-input" style="margin-top:4px;" value="${item.questionamento || ''}" placeholder="Digite aqui..." onchange="atualizarQuestionamentoManut('${item.id}', this.value)" ${isBlocked}></div>
                             <div style="flex: 1; min-width: 200px;"><label style="font-size: 11px; font-weight: bold; color: var(--text-secondary);">Alterado por / Aprovador</label><br><input type="text" class="table-input" style="margin-top:4px; background: var(--border-color); font-weight:bold; color:var(--primary-blue);" value="${item.aprovador || ''}" readonly></div>
                         </div>
                     </div>
@@ -1348,6 +1489,11 @@
             });
             if(contAberto.innerHTML === "") contAberto.innerHTML = "<p style='font-size:12px; color:var(--text-secondary);'>Nenhum pedido de manutenção em aberto.</p>";
             if(contHist.innerHTML === "") contHist.innerHTML = "<p style='font-size:12px; color:var(--text-secondary);'>Nenhum pedido no histórico.</p>";
+            
+            // Força a barra de rolagem dos chats irem para o final (mensagens mais recentes)
+            setTimeout(() => {
+                document.querySelectorAll('.chat-messages').forEach(el => el.scrollTop = el.scrollHeight);
+            }, 100);
         }
 
         // ==========================================
