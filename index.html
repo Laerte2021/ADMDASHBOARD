@@ -272,6 +272,7 @@
         }
         .card-title { font-size: 16px; font-weight: bold; color: var(--primary-blue); display: flex; align-items: center; gap: 8px; }
 
+        /* Hierarchy Drilldown (Tree) */
         .tree-node { margin-bottom: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); }
         .tree-header { padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; user-select: none; }
         .tree-header:hover { background-color: var(--hover-blue); }
@@ -345,6 +346,7 @@
     <!-- TELA INICIAL -->
     <div id="initialScreen">
         <div class="initial-card">
+            <!-- LOGO INSERIDA AQUI NA TELA INICIAL -->
             <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-width: 250px; margin-bottom: 20px;">
             <p>Selecione como deseja acessar o painel interativo de custos.</p>
             <div class="initial-btn-group">
@@ -360,6 +362,7 @@
 
     <header>
         <div class="title-container">
+            <!-- LOGO INSERIDA NO CABEÇALHO AO LADO DO TÍTULO -->
             <h1 style="display: flex; align-items: center; gap: 15px;">
                 <img src="logo-BRMobility-black.png" alt="Logo BRMobility" style="max-height: 40px;">
                 Dashboard Interativo de Custos Administrativos
@@ -766,6 +769,95 @@
                     document.getElementById('fileInput').value = ""; alert('Planilha sincronizada!');
                 }
             }; reader.readAsArrayBuffer(file);
+        }
+
+        // ==========================================
+        // CÓDIGO DA ABA DE COMPRAS (RESTAURADO)
+        // ==========================================
+        function getStatusClass(status) {
+            switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; default: return 'status-aberto'; }
+        }
+        
+        window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); } }
+        window.atualizarCampoCompra = async (docId, campo, valor) => { try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } catch(e) { console.error(e); } }
+        window.removerPedidoCompra = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "pedidos_compras", docId)); } catch(e) { console.error(e); } } }
+
+        window.handleFileUploadCompras = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+                if (jsonData.length > 0) {
+                    const novosPedidos = jsonData.map(row => {
+                        const getVal = (possibleNames) => {
+                            const foundKey = Object.keys(row).find(k => possibleNames.some(name => k.trim().toUpperCase() === name.toUpperCase()));
+                            return foundKey ? row[foundKey] : '';
+                        };
+                        const parseNum = (val) => {
+                            if (typeof val === 'string') { val = val.replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); }
+                            return parseFloat(val) || 0;
+                        };
+                        return {
+                            situacao: (getVal(['SITUAÇÃO', 'SITUACAO', 'STATUS']) || 'EM ABERTO').toUpperCase(),
+                            produto: getVal(['PRODUTO', 'ITEM', 'DESCRIÇÃO']) || '-',
+                            qtd: parseNum(getVal(['QUANTIDADE', 'QTD'])) || 1, 
+                            loja: getVal(['LOJA', 'FORNECEDOR']) || '-',
+                            departamento: getVal(['DEPARTAMENTO', 'SETOR']) || '-',
+                            valorUn: parseNum(getVal(['VALOR UN.', 'VALOR UN', 'PREÇO'])),
+                            desconto: parseNum(getVal(['DESCONTO'])),
+                            frete: parseNum(getVal(['FRETE'])),
+                            imposto: parseNum(getVal(['IMPOSTO', 'TAXA'])),
+                            link: getVal(['LINK', 'URL']) || '',
+                            utilidade: getVal(['UTILIDADE', 'MOTIVO']) || '-',
+                            obs: getVal(['OBSERVAÇÕES', 'OBSERVACOES', 'OBS']) || '',
+                            aprovador: getVal(['APROVADOR', 'RESPONSÁVEL', 'NOME']) || ''
+                        };
+                    });
+                    document.getElementById('statusFirebase').innerText = "Sincronizando Compras...";
+                    document.getElementById('statusFirebase').style.color = "orange";
+                    try {
+                        const querySnapshot = await getDocs(collection(db, "pedidos_compras"));
+                        const deletePromises = [];
+                        querySnapshot.forEach((docSnap) => deletePromises.push(deleteDoc(docSnap.ref)));
+                        await Promise.all(deletePromises); 
+                        for (let i = 0; i < novosPedidos.length; i++) {
+                            await addDoc(collection(db, "pedidos_compras"), novosPedidos[i]);
+                        }
+                        document.getElementById('statusFirebase').innerText = "Online (Sincronizado)";
+                        document.getElementById('statusFirebase').style.color = "green";
+                        document.getElementById('fileInputCompras').value = ""; 
+                        alert('Planilha de Pedidos de Compras sincronizada com o banco de dados!');
+                    } catch (error) {
+                        console.error("Erro no Firebase:", error);
+                        alert("Erro ao salvar compras. Verifique suas permissões.");
+                    }
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.renderTabelaCompras = () => {
+            const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
+            const disabledAttr = isAdmin || window.nomeUsuarioRestrito ? '' : 'disabled="disabled"';
+            pedidosCompras.forEach((item) => {
+                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
+                const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="removerPedidoCompra('${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
+                let linkUrl = item.link ? item.link.trim() : ''; if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
+                const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Link</a>` : '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="alterarStatusCompra('${item.id}', this.value)" ${disabledAttr}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'obs', this.value)" ${disabledAttr}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="atualizarCampoCompra('${item.id}', 'aprovador', this.value)" ${disabledAttr}></td><td>${deleteBtnHtml}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.addPedidoCompra = async () => {
+            const prod = document.getElementById('compProd').value; if(!prod) { alert('Informe produto.'); return; }
+            const novoItem = { situacao: document.getElementById('compSit').value, produto: prod, qtd: parseFloat(document.getElementById('compQtd').value) || 0, loja: document.getElementById('compLoja').value || '-', departamento: document.getElementById('compDep').value || '-', valorUn: parseFloat(document.getElementById('compValUn').value) || 0, desconto: parseFloat(document.getElementById('compDesc').value) || 0, frete: parseFloat(document.getElementById('compFrete').value) || 0, imposto: parseFloat(document.getElementById('compImp').value) || 0, link: document.getElementById('compLink').value || '', utilidade: document.getElementById('compUtil').value || '-', obs: document.getElementById('compObs').value || '', aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' };
+            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar."); }
         }
 
         // ==========================================
