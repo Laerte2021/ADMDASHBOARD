@@ -619,7 +619,7 @@
                 <button class="btn" onclick="addPedidoCompra()"><i class="fa-solid fa-check"></i> Inserir no Pedido</button>
             </div>
 
-            <!-- NOVO BOTÃO: FECHAR LOTE (APARECE APENAS SE IDENTIFICADO) -->
+            <!-- NOVO BOTÃO: FECHAR LOTE -->
             <div id="btnFecharLoteContainer" style="display: none; margin-bottom: 15px;">
                 <button class="btn" style="background-color: #3b82f6; width: 100%; justify-content: center; font-size: 14px;" onclick="verificarAcessoParaAcao('concluirLoteComprasAprovadas')">
                     <i class="fa-solid fa-box-archive"></i> Concluir / Arquivar Lote (Itens Aprovados)
@@ -735,12 +735,14 @@
         let currentPeriod = 'ALL'; 
         let chartInstance = null;
 
-        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-
         // CONTROLE DE IDENTIFICAÇÃO GLOBAL (COMPRAS E MANUTENÇÃO)
         window.nomeUsuarioRestrito = "";
         window.acaoPendenteRestrita = null;
         window.argsPendenteRestrita = [];
+        window.abaPendenteRestrita = null;
+        window.btnPendenteRestrito = null;
+
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
         window.entrarVisitante = () => { 
             document.getElementById('statusFirebase').innerText = "Iniciando sessão...";
@@ -768,6 +770,17 @@
             }
         };
 
+        window.verificarAcessoRestrito = (tabId, btn) => {
+            // Se não tem nome E não é admin, pede identificação para entrar na aba
+            if (!window.nomeUsuarioRestrito && !isAdmin) {
+                window.btnPendenteRestrito = btn;
+                window.abaPendenteRestrita = tabId;
+                document.getElementById('identificacaoModal').style.display = 'flex';
+                return;
+            }
+            switchTab(tabId, btn);
+        };
+
         window.fecharIdentificacao = () => { document.getElementById('identificacaoModal').style.display = 'none'; };
 
         window.confirmarNomeAcesso = () => {
@@ -784,20 +797,26 @@
 
             fecharIdentificacao();
             
-            if (window.acaoPendenteRestrita && window[window.acaoPendenteRestrita]) {
+            // 1. Verifica se estava tentando abrir uma aba
+            if (window.abaPendenteRestrita && window.btnPendenteRestrito) {
+                switchTab(window.abaPendenteRestrita, window.btnPendenteRestrito);
+                window.abaPendenteRestrita = null;
+                window.btnPendenteRestrito = null;
+            } 
+            // 2. Verifica se estava tentando executar uma ação (ex: aprovar, comentar)
+            else if (window.acaoPendenteRestrita && window[window.acaoPendenteRestrita]) {
                 window[window.acaoPendenteRestrita](...window.argsPendenteRestrita);
                 window.acaoPendenteRestrita = null;
                 window.argsPendenteRestrita = [];
-            } else {
-                renderTabelaCompras();
-                renderTelasManutencao();
             }
+            
+            renderTabelaCompras();
+            renderTelasManutencao();
         };
 
         // STATUS LOGIN
         onAuthStateChanged(auth, (user) => {
             if (user && !user.isAnonymous) {
-                // É Admin via e-mail e senha
                 isAdmin = true;
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('labelUploadCompras').style.display = 'inline-flex';
@@ -818,7 +837,6 @@
                 document.getElementById('initialScreen').style.display = 'none';
                 fecharLogin();
             } else if (user && user.isAnonymous) {
-                // É visitante anônimo autorizado
                 isAdmin = false;
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
@@ -837,7 +855,6 @@
                 document.getElementById('btnSair').style.display = 'none';
                 document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
             } else {
-                // Deslogado completamente
                 isAdmin = false;
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
@@ -1050,7 +1067,8 @@
             const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
             const accordionArea = document.getElementById('comprasAccordionArea'); if(accordionArea) accordionArea.innerHTML = '';
             
-            const disabledAttrForSelect = ''; // Sempre editavel, o gatilho verifica se tem nome
+            // Variáveis de permissão sem disabled para edição
+            const disabledAttrForSelect = ''; 
             const disabledAttrForInputs = ''; 
             
             const btnContainer = document.getElementById('btnFecharLoteContainer');
@@ -1249,7 +1267,7 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO
+        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO)
         // ==========================================
         function gerarPlacasVazias() {
             return [{
