@@ -534,8 +534,8 @@
         <button class="tab-btn" onclick="switchTab('tab-fornecedor', this)"><i class="fa-solid fa-truck"></i> Por Fornecedor</button>
         <button class="tab-btn" onclick="switchTab('tab-frequencia', this)"><i class="fa-solid fa-arrows-rotate"></i> Por Frequência</button>
         
-        <button class="tab-btn highlight" onclick="switchTab('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
-        <button class="tab-btn highlight-teal" onclick="switchTab('tab-manutencao', this)"><i class="fa-solid fa-screwdriver-wrench"></i> MANUTENÇÃO</button>
+        <button class="tab-btn highlight" onclick="verificarAcessoRestrito('tab-compras', this)"><i class="fa-solid fa-cart-shopping"></i> PEDIDO DE COMPRAS</button>
+        <button class="tab-btn highlight-teal" onclick="verificarAcessoRestrito('tab-manutencao', this)"><i class="fa-solid fa-screwdriver-wrench"></i> MANUTENÇÃO</button>
         <button class="tab-btn highlight-purple" onclick="switchTab('tab-endomarketing', this)"><i class="fa-solid fa-bullhorn"></i> ENDOMARKETING</button>
     </div>
 
@@ -709,7 +709,7 @@
     <!-- SCRIPT TIPO MODULE PARA O FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -742,7 +742,17 @@
         window.acaoPendenteRestrita = null;
         window.argsPendenteRestrita = [];
 
-        window.entrarVisitante = () => { document.getElementById('initialScreen').style.display = 'none'; }
+        window.entrarVisitante = () => { 
+            document.getElementById('statusFirebase').innerText = "Iniciando sessão...";
+            signInAnonymously(auth)
+                .then(() => {
+                    document.getElementById('initialScreen').style.display = 'none'; 
+                })
+                .catch((error) => {
+                    console.error("Erro no login anonimo:", error);
+                    alert("Não foi possível conectar ao banco de dados: " + error.message);
+                });
+        }
 
         // VERIFICAÇÃO UNIFICADA PARA BOTÕES/INPUTS
         window.verificarAcessoParaAcao = (funcaoNome, ...args) => {
@@ -786,7 +796,8 @@
 
         // STATUS LOGIN
         onAuthStateChanged(auth, (user) => {
-            if (user) {
+            if (user && !user.isAnonymous) {
+                // É Admin via e-mail e senha
                 isAdmin = true;
                 document.getElementById('labelUpload').style.display = 'inline-flex';
                 document.getElementById('labelUploadCompras').style.display = 'inline-flex';
@@ -806,7 +817,8 @@
                 document.getElementById('btnAbrirLogin').style.display = 'none';
                 document.getElementById('initialScreen').style.display = 'none';
                 fecharLogin();
-            } else {
+            } else if (user && user.isAnonymous) {
+                // É visitante anônimo autorizado
                 isAdmin = false;
                 document.getElementById('labelUpload').style.display = 'none';
                 document.getElementById('labelUploadCompras').style.display = 'none';
@@ -824,6 +836,26 @@
 
                 document.getElementById('btnSair').style.display = 'none';
                 document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
+            } else {
+                // Deslogado completamente
+                isAdmin = false;
+                document.getElementById('labelUpload').style.display = 'none';
+                document.getElementById('labelUploadCompras').style.display = 'none';
+                
+                const lblManutencao = document.getElementById('labelUploadManutencao');
+                if(lblManutencao) lblManutencao.style.display = 'none';
+                const btnModManutencao = document.getElementById('btnDownloadModeloManutencao');
+                if(btnModManutencao) btnModManutencao.style.display = 'none';
+
+                document.getElementById('formComprasContainer').style.display = 'none';
+                document.getElementById('formManutencaoContainer').style.display = 'none';
+                
+                const formEndo = document.getElementById('formEndoContainer');
+                if(formEndo) formEndo.style.display = 'none';
+
+                document.getElementById('btnSair').style.display = 'none';
+                document.getElementById('btnAbrirLogin').style.display = 'inline-flex';
+                document.getElementById('initialScreen').style.display = 'flex';
             }
             renderTabelaCompras();
             renderTelasManutencao();
@@ -896,8 +928,10 @@
                     const querySnapshot = await getDocs(collection(db, "dados_planilha"));
                     const deletePromises = []; querySnapshot.forEach((docSnap) => deletePromises.push(deleteDoc(docSnap.ref)));
                     await Promise.all(deletePromises);
-                    for (let i = 0; i < newRawData.length; i++) await addDoc(collection(db, "dados_planilha"), newRawData[i]);
-                    document.getElementById('fileInput').value = ""; alert('Planilha sincronizada!');
+                    try {
+                        for (let i = 0; i < newRawData.length; i++) await addDoc(collection(db, "dados_planilha"), newRawData[i]);
+                        document.getElementById('fileInput').value = ""; alert('Planilha sincronizada!');
+                    } catch (err) { alert("Erro ao salvar dados gerais: " + err.message); }
                 }
             }; reader.readAsArrayBuffer(file);
         }
@@ -909,9 +943,9 @@
             switch(status) { case 'EM ABERTO': return 'status-aberto'; case 'APROVADO': case 'APROVADA': return 'status-aprovado'; case 'NÃO APROVADO': case 'NÃO APROVADA': return 'status-nao-aprovado'; case 'EM ANALISE': return 'status-analise'; case 'CONCLUÍDO': return 'status-concluido'; default: return 'status-aberto'; }
         }
         
-        window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); } }
-        window.atualizarCampoCompra = async (docId, campo, valor) => { try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } catch(e) { console.error(e); } }
-        window.removerPedidoCompra = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "pedidos_compras", docId)); } catch(e) { console.error(e); } } }
+        window.alterarStatusCompra = async (docId, novoStatus) => { try { let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) { updateData.aprovador = window.nomeUsuarioRestrito; } await updateDoc(doc(db, "pedidos_compras", docId), updateData); } catch(e) { console.error(e); alert("Erro ao salvar alteração: " + e.message); } }
+        window.atualizarCampoCompra = async (docId, campo, valor) => { try { await updateDoc(doc(db, "pedidos_compras", docId), { [campo]: valor }); } catch(e) { console.error(e); alert("Erro ao salvar campo: " + e.message); } }
+        window.removerPedidoCompra = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "pedidos_compras", docId)); } catch(e) { console.error(e); alert("Erro ao excluir: " + e.message); } } }
 
         window.handleFileUploadCompras = async (e) => {
             const file = e.target.files[0];
@@ -964,7 +998,7 @@
                         alert('Planilha de Pedidos de Compras sincronizada com o banco de dados!');
                     } catch (error) {
                         console.error("Erro no Firebase:", error);
-                        alert("Erro ao salvar compras. Verifique suas permissões.");
+                        alert("Erro ao salvar compras. Verifique suas permissões: " + error.message);
                     }
                 }
             };
@@ -999,7 +1033,7 @@
                 alert("Lote concluído e arquivado com sucesso!");
             } catch (error) {
                 console.error("Erro ao concluir lote: ", error);
-                alert("Ocorreu um erro ao arquivar o lote.");
+                alert("Ocorreu um erro ao arquivar o lote: " + error.message);
             }
         };
 
@@ -1016,13 +1050,12 @@
             const tbody = document.querySelector('#tableComprasData tbody'); if(!tbody) return; tbody.innerHTML = '';
             const accordionArea = document.getElementById('comprasAccordionArea'); if(accordionArea) accordionArea.innerHTML = '';
             
-            // Variáveis de permissão sem disabled para edição
-            const disabledAttrForSelect = ''; 
+            const disabledAttrForSelect = ''; // Sempre editavel, o gatilho verifica se tem nome
             const disabledAttrForInputs = ''; 
             
             const btnContainer = document.getElementById('btnFecharLoteContainer');
             if (btnContainer) {
-                btnContainer.style.display = 'flex'; // Visitante pode ver o botao, ao clicar o verificador barra
+                btnContainer.style.display = 'flex'; 
             }
 
             const pedidosAtivos = pedidosCompras.filter(item => item.situacao !== 'CONCLUÍDO');
@@ -1111,7 +1144,7 @@
         window.addPedidoCompra = async () => {
             const prod = document.getElementById('compProd').value; if(!prod) { alert('Informe produto.'); return; }
             const novoItem = { situacao: document.getElementById('compSit').value, produto: prod, qtd: parseFloat(document.getElementById('compQtd').value) || 0, loja: document.getElementById('compLoja').value || '-', departamento: document.getElementById('compDep').value || '-', valorUn: parseFloat(document.getElementById('compValUn').value) || 0, desconto: parseFloat(document.getElementById('compDesc').value) || 0, frete: parseFloat(document.getElementById('compFrete').value) || 0, imposto: parseFloat(document.getElementById('compImp').value) || 0, link: document.getElementById('compLink').value || '', utilidade: document.getElementById('compUtil').value || '-', obs: document.getElementById('compObs').value || '', aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' };
-            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar."); }
+            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar: " + e.message); }
         }
 
         // ==========================================
@@ -1133,22 +1166,22 @@
             const data = document.getElementById('endoData').value;
             if(!titulo || !data) { alert("Por favor, preencha o Título e a Data da Campanha."); return; }
             const novaCampanha = { titulo: titulo, data: data.split('-').reverse().join('/'), descricao: "", fotos: [], custos: [], dataCriacao: new Date().toISOString() };
-            try { await addDoc(collection(db, "endomarketing"), novaCampanha); document.getElementById('endoTitulo').value = ""; document.getElementById('endoData').value = ""; } catch (e) { console.error(e); alert("Erro ao criar campanha."); }
+            try { await addDoc(collection(db, "endomarketing"), novaCampanha); document.getElementById('endoTitulo').value = ""; document.getElementById('endoData').value = ""; } catch (e) { console.error(e); alert("Erro ao criar campanha: " + e.message); }
         };
 
-        window.atualizarDescricaoEndo = async (docId, valor) => { try { await updateDoc(doc(db, "endomarketing", docId), { descricao: valor }); } catch(e) { console.error(e); } };
+        window.atualizarDescricaoEndo = async (docId, valor) => { try { await updateDoc(doc(db, "endomarketing", docId), { descricao: valor }); } catch(e) { console.error(e); alert("Erro ao salvar descrição: " + e.message); } };
 
         window.addFotoEndo = (docId, event) => {
             const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
             reader.onload = async (e) => {
                 const base64 = e.target.result; const campanha = campanhasEndo.find(c => c.id === docId);
-                if(campanha) { let novasFotos = [...(campanha.fotos || [])]; novasFotos.push(base64); try { await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos }); } catch(err) { console.error(err); alert("Erro ao salvar foto."); } }
+                if(campanha) { let novasFotos = [...(campanha.fotos || [])]; novasFotos.push(base64); try { await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos }); } catch(err) { console.error(err); alert("Erro ao salvar foto: " + err.message); } }
             }; reader.readAsDataURL(file);
         };
 
         window.removerFotoEndo = async (docId, fotoIndex) => {
             if(!confirm("Deseja remover esta foto?")) return; const campanha = campanhasEndo.find(c => c.id === docId);
-            if(campanha) { let novasFotos = [...(campanha.fotos || [])]; novasFotos.splice(fotoIndex, 1); await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos }); }
+            if(campanha) { let novasFotos = [...(campanha.fotos || [])]; novasFotos.splice(fotoIndex, 1); try { await updateDoc(doc(db, "endomarketing", docId), { fotos: novasFotos }); } catch (e) { alert("Erro ao deletar: " + e.message); } }
         };
 
         window.addCustoEndo = async (docId) => {
@@ -1156,15 +1189,15 @@
             if(!dataCusto || !desc) { alert("Preencha a Data e a Descrição do custo."); return; }
             const valorTotal = qtd * valorUn; const novoCusto = { data: dataCusto.split('-').reverse().join('/'), loja: loja || '-', descricao: desc, quantidade: qtd, valorUn: valorUn, valorTotal: valorTotal };
             const campanha = campanhasEndo.find(c => c.id === docId);
-            if(campanha) { let novosCustos = [...(campanha.custos || [])]; novosCustos.push(novoCusto); await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos }); }
+            if(campanha) { let novosCustos = [...(campanha.custos || [])]; novosCustos.push(novoCusto); try { await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos }); } catch (e) { alert("Erro ao salvar custo: " + e.message); } }
         };
 
         window.removerCustoEndo = async (docId, custoIndex) => {
             if(!confirm("Remover este item da tabela de custos?")) return; const campanha = campanhasEndo.find(c => c.id === docId);
-            if(campanha) { let novosCustos = [...(campanha.custos || [])]; novosCustos.splice(custoIndex, 1); await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos }); }
+            if(campanha) { let novosCustos = [...(campanha.custos || [])]; novosCustos.splice(custoIndex, 1); try { await updateDoc(doc(db, "endomarketing", docId), { custos: novosCustos }); } catch (e) { alert("Erro ao deletar: " + e.message); } }
         };
 
-        window.removerCampanhaEndo = async (docId) => { if(confirm("ATENÇÃO: Deseja excluir permanentemente este mural de campanha inteiro? Todos os custos e fotos serão perdidos.")) { await deleteDoc(doc(db, "endomarketing", docId)); } };
+        window.removerCampanhaEndo = async (docId) => { if(confirm("ATENÇÃO: Deseja excluir permanentemente este mural de campanha inteiro? Todos os custos e fotos serão perdidos.")) { try { await deleteDoc(doc(db, "endomarketing", docId)); } catch(e) { alert("Erro ao excluir campanha: " + e.message); } } };
 
         window.renderEndomarketing = () => {
             const container = document.getElementById('endoCardsContainer'); if(!container) return; container.innerHTML = "";
@@ -1216,7 +1249,7 @@
         }
 
         // ==========================================
-        // CÓDIGO DA ABA DE MANUTENÇÃO (ATUALIZADO)
+        // CÓDIGO DA ABA DE MANUTENÇÃO
         // ==========================================
         function gerarPlacasVazias() {
             return [{
@@ -1229,7 +1262,7 @@
             const titulo = document.getElementById('manutTitulo').value; const local = document.getElementById('manutLocal').value;
             if(!titulo) { alert("Informe pelo menos o Título."); return; }
             const novoPedido = { titulo: titulo, local: local, situacao: "EM ABERTO", questionamento: "", aprovador: "", dataCriacao: new Date().toLocaleDateString('pt-BR'), placaAprovadaIndex: null, placas: gerarPlacasVazias() };
-            try { await addDoc(collection(db, "manutencao"), novoPedido); document.getElementById('manutTitulo').value = ""; document.getElementById('manutLocal').value = ""; } catch (e) { console.error(e); alert("Erro ao criar."); }
+            try { await addDoc(collection(db, "manutencao"), novoPedido); document.getElementById('manutTitulo').value = ""; document.getElementById('manutLocal').value = ""; } catch (e) { console.error(e); alert("Erro ao criar: " + e.message); }
         };
 
         window.baixarModeloManutencao = () => {
@@ -1249,14 +1282,14 @@
                         return { titulo: titulo, local: local, situacao: "EM ABERTO", questionamento: "", aprovador: "", dataCriacao: new Date().toLocaleDateString('pt-BR'), placaAprovadaIndex: null, placas: gerarPlacasVazias() };
                     });
                     document.getElementById('statusFirebase').innerText = "Sincronizando Manutenções..."; document.getElementById('statusFirebase').style.color = "orange";
-                    try { for (let i = 0; i < novosPedidos.length; i++) await addDoc(collection(db, "manutencao"), novosPedidos[i]); document.getElementById('statusFirebase').innerText = "Online (Sincronizado)"; document.getElementById('statusFirebase').style.color = "green"; document.getElementById('fileInputManutencao').value = ""; alert('Planilha carregada com sucesso!'); } catch (error) { console.error("Erro no Firebase:", error); alert("Erro ao salvar."); }
+                    try { for (let i = 0; i < novosPedidos.length; i++) await addDoc(collection(db, "manutencao"), novosPedidos[i]); document.getElementById('statusFirebase').innerText = "Online (Sincronizado)"; document.getElementById('statusFirebase').style.color = "green"; document.getElementById('fileInputManutencao').value = ""; alert('Planilha carregada com sucesso!'); } catch (error) { console.error("Erro no Firebase:", error); alert("Erro ao salvar: " + error.message); }
                 }
             }; reader.readAsArrayBuffer(file);
         };
 
         window.atualizarPlacaManutencao = async (docId, placaIndex, campo, valor) => {
             const pedido = pedidosManutencao.find(p => p.id === docId);
-            if(pedido) { let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : [])); if(novasPlacas[placaIndex]) { novasPlacas[placaIndex][campo] = valor; await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } }
+            if(pedido) { let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : [])); if(novasPlacas[placaIndex]) { novasPlacas[placaIndex][campo] = valor; try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } catch (e) { alert("Erro ao salvar: " + e.message); } } }
         };
 
         window.atualizarLinhaPlacaManutencao = async (docId, placaIndex, linhaIndex, campo, valor) => {
@@ -1266,7 +1299,7 @@
                 if(novasPlacas[placaIndex]) {
                     if (!Array.isArray(novasPlacas[placaIndex].linhas)) { novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ]; }
                     if(!novasPlacas[placaIndex].linhas[linhaIndex]) { novasPlacas[placaIndex].linhas[linhaIndex] = { item: "", qtde: "", valorUn: "", valorTotal: "" }; }
-                    novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor; await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                    novasPlacas[placaIndex].linhas[linhaIndex][campo] = valor; try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } catch (e) { alert("Erro ao salvar: " + e.message); }
                 }
             }
         };
@@ -1277,7 +1310,7 @@
                 let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
                 if(novasPlacas[placaIndex]) {
                     if (!Array.isArray(novasPlacas[placaIndex].linhas)) { novasPlacas[placaIndex].linhas = [ { item: novasPlacas[placaIndex].itens||"", qtde: novasPlacas[placaIndex].qtde||"", valorUn: novasPlacas[placaIndex].valorUn||"", valorTotal: novasPlacas[placaIndex].valorTotalItem||"" } ]; }
-                    novasPlacas[placaIndex].linhas.push({ item: "", qtde: "", valorUn: "", valorTotal: "" }); await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                    novasPlacas[placaIndex].linhas.push({ item: "", qtde: "", valorUn: "", valorTotal: "" }); try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } catch (e) { alert("Erro ao salvar: " + e.message); }
                 }
             }
         };
@@ -1287,7 +1320,7 @@
             if(pedido) {
                 let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
                 if(novasPlacas[placaIndex]) {
-                    if (Array.isArray(novasPlacas[placaIndex].linhas) && novasPlacas[placaIndex].linhas.length > 1) { novasPlacas[placaIndex].linhas.splice(linhaIndex, 1); await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } else { alert("Você não pode remover a última linha restante."); }
+                    if (Array.isArray(novasPlacas[placaIndex].linhas) && novasPlacas[placaIndex].linhas.length > 1) { novasPlacas[placaIndex].linhas.splice(linhaIndex, 1); try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } catch (e) { alert("Erro ao excluir: " + e.message); } } else { alert("Você não pode remover a última linha restante."); }
                 }
             }
         };
@@ -1297,7 +1330,7 @@
             if(pedido) {
                 let novasPlacas = JSON.parse(JSON.stringify(Array.isArray(pedido.placas) ? pedido.placas : []));
                 novasPlacas.push({ empresa: "", cnpj: "", avaliacoes: "", tempo: "", site: "", linhas: [ { item: "", qtde: "", valorUn: "", valorTotal: "" } ], mensagens: [], valorTotalGeral: "", prazo: "", emissao: "", pagamento: "" });
-                await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas });
+                try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); } catch (e) { alert("Erro ao salvar: " + e.message); }
             }
         };
 
@@ -1308,7 +1341,7 @@
                 if(novasPlacas.length > 1) {
                     novasPlacas.splice(placaIndex, 1); let novaAprovacao = pedido.placaAprovadaIndex; if(novaAprovacao === placaIndex) novaAprovacao = null; else if (novaAprovacao > placaIndex) novaAprovacao -= 1;
                     let updateData = { placas: novasPlacas }; if (novaAprovacao !== pedido.placaAprovadaIndex) { updateData.placaAprovadaIndex = novaAprovacao; if(novaAprovacao === null) updateData.situacao = "EM ANALISE"; }
-                    await updateDoc(doc(db, "manutencao", docId), updateData);
+                    try { await updateDoc(doc(db, "manutencao", docId), updateData); } catch (e) { alert("Erro ao excluir: " + e.message); }
                 } else { alert("O pedido precisa ter pelo menos 1 cotação. Você não pode remover a última placa."); }
             }
         };
@@ -1322,28 +1355,28 @@
                 if(novasPlacas[placaIndex]) {
                     if (!Array.isArray(novasPlacas[placaIndex].mensagens)) { novasPlacas[placaIndex].mensagens = []; }
                     novasPlacas[placaIndex].mensagens.push({ autor: autor, texto: texto, data: dataHora });
-                    try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); inputField.value = ""; } catch (e) { console.error("Erro ao enviar mensagem:", e); }
+                    try { await updateDoc(doc(db, "manutencao", docId), { placas: novasPlacas }); inputField.value = ""; } catch (e) { console.error("Erro ao enviar mensagem:", e); alert("Erro ao enviar mensagem: " + e.message); }
                 }
             }
         };
 
         window.aprovarCotacaoManutencao = async (docId, placaIndex) => {
-            if(confirm("Confirma a aprovação exclusiva desta cotação?")) { try { await updateDoc(doc(db, "manutencao", docId), { situacao: "APROVADA", aprovador: window.nomeUsuarioRestrito, placaAprovadaIndex: placaIndex }); } catch(e) { console.error(e); } }
+            if(confirm("Confirma a aprovação exclusiva desta cotação?")) { try { await updateDoc(doc(db, "manutencao", docId), { situacao: "APROVADA", aprovador: window.nomeUsuarioRestrito || "Administrador", placaAprovadaIndex: placaIndex }); } catch(e) { console.error(e); alert("Erro ao aprovar: " + e.message); } }
         };
 
         window.alterarStatusManut = async (docId, novoStatus) => {
             let updateData = { situacao: novoStatus }; if (window.nomeUsuarioRestrito) updateData.aprovador = window.nomeUsuarioRestrito; if (novoStatus !== "APROVADA") updateData.placaAprovadaIndex = null;
-            await updateDoc(doc(db, "manutencao", docId), updateData);
+            try { await updateDoc(doc(db, "manutencao", docId), updateData); } catch (e) { alert("Erro ao alterar status: " + e.message); }
         };
 
-        window.atualizarQuestionamentoManut = async (docId, valor) => { await updateDoc(doc(db, "manutencao", docId), { questionamento: valor }); };
+        window.atualizarQuestionamentoManut = async (docId, valor) => { try { await updateDoc(doc(db, "manutencao", docId), { questionamento: valor }); } catch (e) { alert("Erro ao salvar comentário: " + e.message); } };
 
-        window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) await deleteDoc(doc(db, "manutencao", docId)); };
+        window.removerManutencao = async (docId) => { if(confirm("Excluir este pedido?")) { try { await deleteDoc(doc(db, "manutencao", docId)); } catch (e) { alert("Erro ao excluir pedido: " + e.message); } } };
 
         window.renderTelasManutencao = () => {
             const contAberto = document.getElementById('manutencaoAbertoContainer'); const contHist = document.getElementById('manutencaoHistoricoContainer');
             if(!contAberto || !contHist) return; contAberto.innerHTML = ""; contHist.innerHTML = "";
-            const isBlocked = ''; // Inputs de chat e selects estão liberados com verificacao onClick
+            const isBlocked = ''; // Tudo liberado, o gatilho 'verificarAcessoParaAcao' controla o popup
 
             pedidosManutencao.forEach(item => {
                 const isAberto = (item.situacao === 'EM ABERTO' || item.situacao === 'EM ANALISE');
