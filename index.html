@@ -160,7 +160,7 @@
             background-color: var(--hover-blue);
         }
 
-        select, input[type="text"], input[type="number"], input[type="url"], input[type="date"] {
+        select, input[type="text"], input[type="number"], input[type="url"], input[type="date"], textarea {
             padding: 8px 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -603,6 +603,9 @@
                 <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--primary-blue);"><i class="fa-solid fa-plus-circle"></i> Adicionar Item de Compra</h4>
                 <div class="form-grid">
                     <div class="form-group"><label>Situação</label><select id="compSit"><option value="EM ABERTO">EM ABERTO</option><option value="EM ANALISE">EM ANALISE</option><option value="APROVADO">APROVADO</option><option value="NÃO APROVADO">NÃO APROVADO</option></select></div>
+                    <!-- INCLUSÃO DA DATA AQUI -->
+                    <div class="form-group"><label>Data</label><input type="date" id="compData"></div>
+                    
                     <div class="form-group"><label>Produto</label><input type="text" id="compProd" placeholder="Ex: Cadeira"></div>
                     <div class="form-group"><label>Quantidade</label><input type="number" id="compQtd" value="1" min="1"></div>
                     <div class="form-group"><label>Loja</label><input type="text" id="compLoja" placeholder="Ex: Kabum"></div>
@@ -628,8 +631,18 @@
 
             <div class="table-container">
                 <table id="tableComprasData">
-                    <thead><tr><th>SITUAÇÃO</th><th>PRODUTO</th><th>QUANTIDADE</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VALOR UN.</th><th>VALOR TOTAL</th><th>DESCONTO</th><th>FRETE</th><th>IMPOSTO</th><th>TOTAL GERAL</th><th>LINK</th><th>UTILIDADE</th><th>OBSERVAÇÕES</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
+                    <!-- CABEÇALHO ATUALIZADO COM A COLUNA 'DATA' -->
+                    <thead><tr><th>SITUAÇÃO</th><th>DATA</th><th>PRODUTO</th><th>QUANTIDADE</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VALOR UN.</th><th>VALOR TOTAL</th><th>DESCONTO</th><th>FRETE</th><th>IMPOSTO</th><th>TOTAL GERAL</th><th>LINK</th><th>UTILIDADE</th><th>OBSERVAÇÕES</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
                     <tbody></tbody>
+                    <!-- NOVO RODAPÉ TOTALIZADOR -->
+                    <tfoot>
+                        <tr style="background-color: var(--hover-blue);">
+                            <!-- Colspan de 11 pula as primeiras 11 colunas para ficar exatamente sob a 12ª (Total Geral) -->
+                            <td colspan="11" style="text-align: right; font-weight: bold; padding-right: 15px;">TOTAL ACUMULADO EM ABERTO:</td>
+                            <td id="somaTotalGeralCompras" style="font-weight: bold; color: var(--primary-blue); font-size: 14px;">R$ 0,00</td>
+                            <td colspan="5"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -986,6 +999,7 @@
                         };
                         return {
                             situacao: (getVal(['SITUAÇÃO', 'SITUACAO', 'STATUS']) || 'EM ABERTO').toUpperCase(),
+                            dataPedido: getVal(['DATA', 'DATA PEDIDO', 'CRIADO EM']) || new Date().toLocaleDateString('pt-BR'), // NOVA COLUNA MAPEADA
                             produto: getVal(['PRODUTO', 'ITEM', 'DESCRIÇÃO']) || '-',
                             qtd: parseNum(getVal(['QUANTIDADE', 'QTD'])) || 1, 
                             loja: getVal(['LOJA', 'FORNECEDOR']) || '-',
@@ -1079,10 +1093,17 @@
             const pedidosAtivos = pedidosCompras.filter(item => item.situacao !== 'CONCLUÍDO');
             const pedidosConcluidos = pedidosCompras.filter(item => item.situacao === 'CONCLUÍDO');
 
+            // VARIÁVEL DE SOMA TOTAL DOS PEDIDOS ATIVOS
+            let somaTotalAtivos = 0;
+
             // 1. RENDERIZAR TABELA PRINCIPAL (ATIVOS)
             pedidosAtivos.forEach((item) => {
-                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
+                const valorTotal = (Number(item.qtd) || 0) * (Number(item.valorUn) || 0); 
+                const totalGeral = valorTotal - (Number(item.desconto) || 0) + (Number(item.frete) || 0) + (Number(item.imposto) || 0);
                 
+                // INCREMENTAR SOMA TOTAL
+                somaTotalAtivos += totalGeral;
+
                 // ESCONDE O BOTÃO DE LIXEIRA PARA VISITANTES
                 const deleteBtnHtml = isAdmin ? `<button class="btn btn-outline" style="padding:4px 8px; color:#dc2626; border-color:#dc2626;" onclick="window.verificarAcessoParaAcao('removerPedidoCompra', '${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '-';
                 
@@ -1091,9 +1112,16 @@
                 const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-globe"></i> Link</a>` : '-';
                 
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="window.verificarAcessoParaAcao('alterarStatusCompra', '${item.id}', this.value)" ${disabledAttrForSelect}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="window.verificarAcessoParaAcao('atualizarCampoCompra', '${item.id}', 'obs', this.value)" ${disabledAttrForInputs}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="window.verificarAcessoParaAcao('atualizarCampoCompra', '${item.id}', 'aprovador', this.value)" ${disabledAttrForInputs}></td><td>${deleteBtnHtml}</td>`;
+                // INJETANDO O DADO DA COLUNA DE DATA: <td>${item.dataPedido || '-'}</td>
+                tr.innerHTML = `<td><select class="status-select ${getStatusClass(item.situacao)}" onchange="window.verificarAcessoParaAcao('alterarStatusCompra', '${item.id}', this.value)" ${disabledAttrForSelect}><option value="EM ABERTO" ${item.situacao === 'EM ABERTO' ? 'selected' : ''}>EM ABERTO</option><option value="EM ANALISE" ${item.situacao === 'EM ANALISE' ? 'selected' : ''}>EM ANALISE</option><option value="APROVADO" ${item.situacao === 'APROVADO' ? 'selected' : ''}>APROVADO</option><option value="NÃO APROVADO" ${item.situacao === 'NÃO APROVADO' ? 'selected' : ''}>NÃO APROVADO</option></select></td><td>${item.dataPedido || '-'}</td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b>${formatCurrency(valorTotal)}</b></td><td style="color:#dc2626;">-${formatCurrency(item.desconto)}</td><td>${formatCurrency(item.frete)}</td><td>${formatCurrency(item.imposto)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.utilidade}</td><td><input type="text" value="${item.obs || ''}" placeholder="Digitar obs..." class="table-input" onchange="window.verificarAcessoParaAcao('atualizarCampoCompra', '${item.id}', 'obs', this.value)" ${disabledAttrForInputs}></td><td><input type="text" value="${item.aprovador || ''}" placeholder="Nome..." class="table-input" onchange="window.verificarAcessoParaAcao('atualizarCampoCompra', '${item.id}', 'aprovador', this.value)" ${disabledAttrForInputs}></td><td>${deleteBtnHtml}</td>`;
                 tbody.appendChild(tr);
             });
+
+            // ATUALIZAR O RODAPÉ TOTALIZADOR COM A SOMA DOS PEDIDOS ATIVOS
+            const tfootTotal = document.getElementById('somaTotalGeralCompras');
+            if (tfootTotal) {
+                tfootTotal.innerText = formatCurrency(somaTotalAtivos);
+            }
 
             // 2. RENDERIZAR HISTÓRICO (ACORDEÃO AGRUPADO)
             if (accordionArea) {
@@ -1132,7 +1160,8 @@
                         if(linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')){ linkUrl = 'https://' + linkUrl; }
                         const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" style="color:var(--secondary-blue); text-decoration: underline; font-weight: bold;"><i class="fa-solid fa-globe"></i> Link</a>` : '-';
                         
-                        tableRows += `<tr><td><span class="badge" style="background:#e5e7eb; color:#4b5563; border-color:#9ca3af;">CONCLUÍDO</span></td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.aprovador || '-'}</td><td>${deleteBtnHtml}</td></tr>`;
+                        // INJETANDO O DADO DA COLUNA DE DATA NO HISTÓRICO TAMBÉM
+                        tableRows += `<tr><td><span class="badge" style="background:#e5e7eb; color:#4b5563; border-color:#9ca3af;">CONCLUÍDO</span></td><td>${item.dataPedido || '-'}</td><td><b>${item.produto}</b></td><td>${item.qtd}</td><td>${item.loja}</td><td>${item.departamento}</td><td>${formatCurrency(item.valorUn)}</td><td><b style="color:var(--primary-blue);">${formatCurrency(totalGeral)}</b></td><td>${linkHtml}</td><td>${item.aprovador || '-'}</td><td>${deleteBtnHtml}</td></tr>`;
                     });
 
                     accordionHTML += `
@@ -1151,7 +1180,8 @@
                         <div class="accordion-body" id="${idBody}">
                             <div class="table-container">
                                 <table>
-                                    <thead><tr><th>SITUAÇÃO</th><th>PRODUTO</th><th>QTD</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VAL. UN.</th><th>TOTAL GERAL</th><th>LINK</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
+                                    <!-- ATUALIZADO HEADER DO HISTÓRICO COM A COLUNA DATA -->
+                                    <thead><tr><th>SITUAÇÃO</th><th>DATA</th><th>PRODUTO</th><th>QTD</th><th>LOJA</th><th>DEPARTAMENTO</th><th>VAL. UN.</th><th>TOTAL GERAL</th><th>LINK</th><th>APROVADOR</th><th>AÇÕES</th></tr></thead>
                                     <tbody>${tableRows}</tbody>
                                 </table>
                             </div>
@@ -1167,8 +1197,40 @@
         window.addPedidoCompra = async () => {
             if(!isAdmin) { alert('Ação não permitida para visitantes. Apenas administradores podem incluir registros.'); return; }
             const prod = document.getElementById('compProd').value; if(!prod) { alert('Informe produto.'); return; }
-            const novoItem = { situacao: document.getElementById('compSit').value, produto: prod, qtd: parseFloat(document.getElementById('compQtd').value) || 0, loja: document.getElementById('compLoja').value || '-', departamento: document.getElementById('compDep').value || '-', valorUn: parseFloat(document.getElementById('compValUn').value) || 0, desconto: parseFloat(document.getElementById('compDesc').value) || 0, frete: parseFloat(document.getElementById('compFrete').value) || 0, imposto: parseFloat(document.getElementById('compImp').value) || 0, link: document.getElementById('compLink').value || '', utilidade: document.getElementById('compUtil').value || '-', obs: document.getElementById('compObs').value || '', aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' };
-            try { await addDoc(collection(db, "pedidos_compras"), novoItem); document.getElementById('compProd').value = ''; document.getElementById('compQtd').value = '1'; document.getElementById('compValUn').value = '0.00'; document.getElementById('compLink').value = ''; document.getElementById('compUtil').value = ''; } catch (e) { alert("Erro ao adicionar: " + e.message); }
+            
+            // Tratamento da nova variável dataPedido
+            let compDataInput = document.getElementById('compData').value;
+            let dataAjustada = new Date().toLocaleDateString('pt-BR'); // Default = Hoje
+            if (compDataInput) {
+                // Converte de YYYY-MM-DD para DD/MM/YYYY
+                dataAjustada = compDataInput.split('-').reverse().join('/');
+            }
+
+            const novoItem = { 
+                situacao: document.getElementById('compSit').value, 
+                dataPedido: dataAjustada, // SALVANDO NOVA INFORMAÇÃO NO BANCO
+                produto: prod, 
+                qtd: parseFloat(document.getElementById('compQtd').value) || 0, 
+                loja: document.getElementById('compLoja').value || '-', 
+                departamento: document.getElementById('compDep').value || '-', 
+                valorUn: parseFloat(document.getElementById('compValUn').value) || 0, 
+                desconto: parseFloat(document.getElementById('compDesc').value) || 0, 
+                frete: parseFloat(document.getElementById('compFrete').value) || 0, 
+                imposto: parseFloat(document.getElementById('compImp').value) || 0, 
+                link: document.getElementById('compLink').value || '', 
+                utilidade: document.getElementById('compUtil').value || '-', 
+                obs: document.getElementById('compObs').value || '', 
+                aprovador: document.getElementById('compAprov').value || window.nomeUsuarioRestrito || '' 
+            };
+            try { 
+                await addDoc(collection(db, "pedidos_compras"), novoItem); 
+                document.getElementById('compData').value = ''; 
+                document.getElementById('compProd').value = ''; 
+                document.getElementById('compQtd').value = '1'; 
+                document.getElementById('compValUn').value = '0.00'; 
+                document.getElementById('compLink').value = ''; 
+                document.getElementById('compUtil').value = ''; 
+            } catch (e) { alert("Erro ao adicionar: " + e.message); }
         }
 
         // ==========================================
